@@ -1,12 +1,13 @@
 "use client";
 import React from "react";
-import Breadcrumb from "../../../app/components/shared/Breadcrumb";
 import { Skeleton } from "@mantine/core";
 import { AiOutlineLike } from "react-icons/ai";
 import { FaRegCommentAlt } from "react-icons/fa";
 import { TbShare3 } from "react-icons/tb";
 import { GiEarthAsiaOceania } from "react-icons/gi";
 import Image from "next/image";
+import Breadcrumb from "@/app/components/shared/Breadcrumb";
+
 
 const SinglePost = () => {
   const text = false;
