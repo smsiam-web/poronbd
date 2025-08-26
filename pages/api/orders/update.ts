@@ -1,5 +1,6 @@
 // pages/api/orders/update.ts
-import { updateOrderStatus } from "@/lib/order";
+
+import { updateOrderStatus } from "@/admin/utils/helpers";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 

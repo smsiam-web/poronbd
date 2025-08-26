@@ -1,11 +1,11 @@
 import React from "react";
-import Schedule from "../../../admin/components/schedule";
 import AdminLayout from "@/admin/AdminLayout";
+import SchedulePost from "@/admin/components/schedule";
 
 const SchedulePOst = () => {
   return (
     <AdminLayout>
-      <Schedule />
+      <SchedulePost />
     </AdminLayout>
   );
 };

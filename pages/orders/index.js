@@ -1,6 +1,7 @@
 import AdminLayout from "@/admin/AdminLayout";
+import Order from "@/admin/components/order";
 import React from "react";
-import Order from "../../../admin/components/order";
+
 
 const Orders = () => {
   return (
