@@ -176,6 +176,7 @@ const ProductTable = ({ onClick }) => {
               <tr>
                 <td className="px-4 py-3 ">Product id</td>
                 <td className="px-4 py-3 ">sku</td>
+                <td className="px-4 py-3 ">store</td>
                 <td className="px-4 py-3 ">PRODUCT NAME</td>
                 <td className="px-4 py-3 ">CATEGORY</td>
                 <td className="px-4 py-3 ">SALE PRICE</td>
@@ -197,14 +198,23 @@ const ProductTable = ({ onClick }) => {
                   {!!products &&
                     products?.map((item) => (
                       <tr className="" key={item.id}>
+                        <Link href={`/products/id=${item?.id}`}>
+                          <td className="px-4 py-3">
+                            <span className="text-sm font-bold">
+                              #{item?.id || "null"}
+                            </span>
+                          </td>
+                        </Link>
                         <td className="px-4 py-3">
-                          <span className="text-sm font-bold">
-                            #{item?.id || "null"}
+                          <span className="text-sm">
+                            {item?.single_sku ||
+                              item?.variants[0]?.sku ||
+                              "null"}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm">
-                            {item?.single_sku || "null"}
+                            {item?.store_id || "null"}
                           </span>
                         </td>
                         <td className="px-4 py-3">
@@ -238,19 +248,15 @@ const ProductTable = ({ onClick }) => {
                           ))}
                         </td>
                         <td className="px-4 py-3">
-                          
-                            {item?.options?.map((item) => (
+                          {item?.options?.map((item) => (
                             <h6
                               key={item?.name}
                               className="text-sm font-semibold"
                             >
                               {`${item?.name}: `}
-                              {item?.values.map(e => (
-                                `${e?.value}, `
-                              ))}
+                              {item?.values.map((e) => `${e?.value}, `)}
                             </h6>
                           ))}
-                        
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-sm font-semibold">
@@ -259,9 +265,9 @@ const ProductTable = ({ onClick }) => {
                             </span>
                           </span>
                         </td>
-                        
+
                         <td className="px-4 py-3">
-                          <Link href={`/products/${item.id}`}>
+                          <Link href={`/products/id=${item.id}`}>
                             <Tooltip label="Details" color="blue" withArrow>
                               <span className="text-sub-title flex items-center justify-center font-semibold cursor-pointer hover:text-blue-400">
                                 <TbListDetails size={18} />
@@ -280,7 +286,6 @@ const ProductTable = ({ onClick }) => {
                                 }
                                 color="teal"
                                 size="sm"
-                                
                                 thumbIcon={
                                   item.isPublished ? (
                                     <CgCheck
@@ -311,13 +316,13 @@ const ProductTable = ({ onClick }) => {
                         <td className="px-4 py-3">
                           <div className="text-sm font-semibold flex justify-start gap-5 text-sub-title items-center">
                             <Link href={`/products/edit-product/id=${item.id}`}>
-                            <Tooltip label="Edit" color="blue" withArrow>
-                              <span className="text-sub-title flex items-center justify-center font-semibold cursor-pointer hover:text-blue-400">
-                                <FiEdit size={16} />
-                              </span>
-                            </Tooltip>
-                          </Link>
-                            
+                              <Tooltip label="Edit" color="blue" withArrow>
+                                <span className="text-sub-title flex items-center justify-center font-semibold cursor-pointer hover:text-blue-400">
+                                  <FiEdit size={16} />
+                                </span>
+                              </Tooltip>
+                            </Link>
+
                             <Tooltip label="Delete" color="red" withArrow>
                               <span
                                 onClick={() => ConfirmationDelete(item)}

@@ -1,3 +1,4 @@
+import EditProduts from "@/admin/components/products/productDetail";
 import ProductDetails from "@/app/components/product/singleProduct/PorductDetails";
 import Link from "next/link";
 import React from "react";
@@ -12,7 +13,7 @@ const SingleProduct = () => {
           <span>Back</span>
         </div>
       </Link>
-      {/* <ProductDetails disabled={true} /> */}
+      <EditProduts disabled={true} />
     </div>
   );
 };

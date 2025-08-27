@@ -160,8 +160,8 @@ const validationSchema = Yup.object().shape({
         option_values: Yup.array()
           .of(
             Yup.object().shape({
-              option_name: Yup.string().optional(),
-              value: Yup.string().optional(),
+              option_name: Yup.string().nullable(),
+              value: Yup.string().nullable(),
             })
           )
           .min(1, "Variant must have option values"),
@@ -320,6 +320,8 @@ const EditProduts = () => {
 
   /* --------------------------- submit handler --------------------------- */
   const editProductHandler = async (values, formikHelpers) => {
+
+    console.log(values);
     try {
       setLoading(true);
       const payload = buildProductPayload(values);
@@ -361,6 +363,7 @@ const EditProduts = () => {
   const initialValues = {
     // Product basics
     id: product?.id || docId || "",
+    single_sku: product?.single_sku || "",
     title: product?.title || "",
     slug: product?.slug || "",
     status: product?.status || "draft",
@@ -430,10 +433,7 @@ const EditProduts = () => {
     },
 
     // SEO
-    seo: product?.seo || {
-      title: product?.seo?.tile || "",
-      description: product?.seo?.description || "",
-    },
+    seo: product?.seo ,
 
     // Extra
     available_from: product?.available_from || "",

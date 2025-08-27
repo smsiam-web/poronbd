@@ -116,26 +116,8 @@ const OrderDetailsForm = ({ singleOrder, rest }) => {
   }, []);
   const StuffList = [
     {
-      name: "MD Sabbir",
-      id: "MD Sabbir",
-    },
-    {
       name: "Rakibul Islam",
       id: "Rakibul Islam",
-    },
-
-    {
-      name: "Md Mahim",
-      id: "Md Mahim",
-    },
-
-    {
-      name: "Md. Rimon",
-      id: "Md. Rimon",
-    },
-    {
-      name: "Ajoy Shil",
-      id: "Ajoy Shil",
     },
 
     {

@@ -91,7 +91,7 @@ const ProductDetailsFormUp = (edit) => {
       {/* BASICS */}
           <div>
         <span>Product ID (Unique)</span>
-        <FormInput name="id" disabled= {edit} placeholder="ID must be unique" />
+        <FormInput name="id" placeholder="ID must be unique" />
       </div>
       <div>
         <span>Product Status</span>
