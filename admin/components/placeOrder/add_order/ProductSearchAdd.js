@@ -1,9 +1,9 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormikContext, getIn } from "formik";
 import { db } from "@/app/utils/firebase"; // Firestore v8 instance
 
 /**
- * ProductSearchAddWithCreate
+ * ProductSearchAddWithCreate (JavaScript version)
  * ------------------------------------------------------------
  * • Prefix search products by title (case-insensitive via `title_lower`).
  * • Click a result to append it as a new order item in Formik's `items`.
@@ -12,21 +12,13 @@ import { db } from "@/app/utils/firebase"; // Firestore v8 instance
 
 const MAX_RESULTS = 8;
 const DEBOUNCE_MS = 350;
-type ProductHit = {
-  id: string;
-  title?: string;
-  slug?: string;
-  single_sku?: string;
-  variants?: Array<{ sku?: string }>;
-  // add any other fields you read from d.data()
-};
 
 export default function ProductSearchAddWithCreate() {
   const { values, setFieldValue } = useFormikContext();
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
-const [results, setResults] = useState<ProductHit[]>([]);
-const [error, setError] = useState<string>("");
+  const [results, setResults] = useState([]);
+  const [error, setError] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
   // Create form state
@@ -36,128 +28,84 @@ const [error, setError] = useState<string>("");
   const [newQty, setNewQty] = useState(1);
   const [saveToProducts, setSaveToProducts] = useState(false);
 
-  
-
   const dq = useDebounce(q.trim().toLowerCase(), DEBOUNCE_MS);
 
-  // useEffect(() => {
-  //   let alive = true;
-  //   async function run() {
-  //     setError("");
-  //     setResults([]);
-  //     if (!dq || dq.length < 2) return;
-  //     setLoading(true);
-  //     try {
-  //       const snap = await db
-  //         .collection("products")
-  //         .orderBy("title_lower")
-  //         .startAt(dq)
-  //         .endAt(dq + "\uf8ff")
-  //         .limit(MAX_RESULTS)
-  //         .get();
-
-  //       if (!alive) return;
-  //       const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  //       setResults(rows);
-  //     } catch (e) {
-  //       if (!alive) return;
-  //       console.error("Product search error:", e);
-  //       setError("Failed to search. Ensure products.title_lower exists.");
-  //     } finally {
-  //       if (alive) setLoading(false);
-  //     }
-  //   }
-  //   run();
-  //   return () => {
-  //     alive = false;
-  //   };
-  // }, [dq]);
-
   useEffect(() => {
-  let alive = true;
+    let alive = true;
 
-  async function run() {
-    setError("");
-    setResults([]);
-    if (!dq || dq.length < 2) return;
-    setLoading(true);
-    try {
-      const snap = await db
-        .collection("products")
-        .orderBy("title_lower")
-        .startAt(dq)
-        .endAt(dq + "\uf8ff")
-        .limit(MAX_RESULTS)
-        .get();
+    async function run() {
+      setError("");
+      setResults([]);
+      if (!dq || dq.length < 2) return;
+      setLoading(true);
+      try {
+        const snap = await db
+          .collection("products")
+          .orderBy("title_lower")
+          .startAt(dq)
+          .endAt(dq + "\uf8ff")
+          .limit(MAX_RESULTS)
+          .get();
 
-      if (!alive) return;
+        if (!alive) return;
 
-      const rows: ProductHit[] = snap.docs.map((d) => {
-        const data = d.data() as Omit<ProductHit, "id"> & Record<string, unknown>;
-        return { id: d.id, ...data };
-      });
+        const rows = snap.docs.map((d) => {
+          const data = d.data();
+          return { id: d.id, ...data };
+        });
 
-      setResults(rows);
-    } catch (e) {
-      if (!alive) return;
-      console.error("Product search error:", e);
-      setError("Failed to search. Ensure products.title_lower exists.");
-    } finally {
-      if (alive) setLoading(false);
+        setResults(rows);
+      } catch (e) {
+        if (!alive) return;
+        console.error("Product search error:", e);
+        setError("Failed to search. Ensure products.title_lower exists.");
+      } finally {
+        if (alive) setLoading(false);
+      }
     }
-  }
 
-  run();
-  return () => {
-    alive = false;
-  };
-}, [dq]);
+    run();
+    return () => {
+      alive = false;
+    };
+  }, [dq]);
 
   function addItemFromProduct(p) {
     let variant = null;
     if (Array.isArray(p.variants) && p.variants.length) {
-      variant = p.variants.find((v) => v?.is_active) || p.variants[0];
+      variant = p.variants.find((v) => v && v.is_active) || p.variants[0];
     }
 
-    const currency = (
-      p.currency ||
-      getIn(values, "currency") ||
-      "BDT"
-    ).toUpperCase();
-    const price = numberish(variant?.price ?? p?.sale_price ?? p?.price ?? 0);
-    const sku = (variant?.sku || p?.single_sku || "").toString();
+    const currency = (p.currency || getIn(values, "currency") || "BDT").toUpperCase();
+    const price = numberish((variant && variant.price) ?? p.sale_price ?? p.price ?? 0);
+    const sku = String((variant && variant.sku) || p.single_sku || "");
 
     const toIdArray = (vals) =>
       Array.isArray(vals)
         ? vals
-            .flat() // if any nested arrays
-            .filter((v) => v && (v.value ?? v) !== "") // drop empty
-            .map((v) => ({
-              id: typeof v === "object" ? v.value : v,
-              name: typeof v === "object" ? v.value : v,
-            }))
+            .flat()
+            .filter((v) => v && (v.value ?? v) !== "")
+            .map((v) => ({ id: typeof v === "object" ? v.value : v, name: typeof v === "object" ? v.value : v }))
         : [];
 
-    const options = Array.isArray(p?.options)
+    const options = Array.isArray(p.options)
       ? p.options.map((ov) => ({
-          name: ov?.name || "",
-          // NOTE: keep the key you need: `value` or `values`
-          value: toIdArray(ov?.values), // -> [{id:'Red'},{id:'Black'},{id:'Blue'}]
-          // or values: toIdArray(ov?.values),
+          name: (ov && ov.name) || "",
+          value: toIdArray(ov && ov.values), // -> [{id:'Red'},{id:'Black'},{id:'Blue'}]
         }))
       : [];
 
     const newItem = {
       product_id: p.id ?? null,
-      variant_id: variant?.id ?? null,
+      variant_id: (variant && variant.id) ?? null,
       store_id: p.store_id || null,
       sku,
       title: p.title || "",
       slug: p.slug || slugify(p.title || sku),
-      unit: p?.attributes?.Unit || p?.unit || "pc",
+      unit: (p.attributes && p.attributes.Unit) || p.unit || "pc",
       options,
       price,
-      compare_at_price: variant?.compare_at_price ?? p?.price ?? null,
+      compare_at_price: (variant && variant.compare_at_price) ?? p.price ?? null,
       quantity: 1,
       currency,
       tax_rate: 0,
@@ -172,7 +120,7 @@ const [error, setError] = useState<string>("");
   }
 
   async function createNewItem(e) {
-    e?.preventDefault?.();
+    e && e.preventDefault && e.preventDefault();
 
     const title = newTitle.trim() || q.trim();
     const price = numberish(newPrice, 0);
@@ -207,17 +155,16 @@ const [error, setError] = useState<string>("");
     const items = (getIn(values, "items") || []).concat(item);
     setFieldValue("items", items);
 
-    // Optionally persist a minimal product document
     if (saveToProducts) {
       try {
-        const ref = db.collection("products").doc(); // auto-id (change to custom id if needed)
+        const ref = db.collection("products").doc();
         await ref.set(
           {
             title,
             title_lower: title.toLowerCase(),
             slug: slugify(title),
             single_sku: sku || null,
-            price, // or sale_price depending on your model
+            price,
             has_variants: false,
             status: "active",
             createdAt: new Date().toISOString(),
@@ -227,11 +174,9 @@ const [error, setError] = useState<string>("");
         );
       } catch (err) {
         console.error("Failed to save new product:", err);
-        // not fatal for order item creation
       }
     }
 
-    // reset create panel
     setShowCreate(false);
     setNewTitle("");
     setNewSku("");
@@ -290,31 +235,19 @@ const [error, setError] = useState<string>("");
               className="w-full text-left px-3 py-2 hover:bg-gray-50"
             >
               <div className="font-medium text-sm">{p.title}</div>
-              <div className="text-xs text-gray-500">
-                {p.slug || "(no slug)"}
-              </div>
-              <div className="text-xs">
-                SKU:{" "}
-                {p?.single_sku || (p?.variants && p?.variants[0]?.sku) || "—"}
-              </div>
+              <div className="text-xs text-gray-500">{p.slug || "(no slug)"}</div>
+              <div className="text-xs">SKU: {p.single_sku || (p.variants && p.variants[0] && p.variants[0].sku) || "—"}</div>
             </button>
           ))}
         </div>
       )}
 
-      {!loading &&
-        !results.length &&
-        dq.length >= 2 &&
-        !showCreate &&
-        !error && (
-          <div className="text-xs text-gray-500">No products found.</div>
-        )}
+      {!loading && !results.length && dq.length >= 2 && !showCreate && !error && (
+        <div className="text-xs text-gray-500">No products found.</div>
+      )}
 
       {showCreate && (
-        <form
-          onSubmit={createNewItem}
-          className="p-3 border rounded space-y-2 bg-gray-50"
-        >
+        <form onSubmit={createNewItem} className="p-3 border rounded space-y-2 bg-gray-50">
           <div className="font-medium text-sm">Quick Create Item</div>
           <div className="grid grid-cols-4 gap-2 items-end">
             <div className="col-span-2">
@@ -379,8 +312,7 @@ const [error, setError] = useState<string>("");
       )}
 
       <div className="text-[11px] text-gray-400">
-        Tip: maintain <code>title_lower</code> on products and index it for fast
-        prefix search.
+        Tip: maintain <code>title_lower</code> on products and index it for fast prefix search.
       </div>
     </div>
   );

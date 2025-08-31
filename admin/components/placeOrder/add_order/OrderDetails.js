@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo } from "react";
 import { FieldArray, useFormikContext, getIn } from "formik";
 import { AppTextArea, FormDropdown, FormInput } from "../../shared/Form";
-import ProductSearchAdd from "./ProductSearchAdd";
+import ProductSearchAddWithCreate from "./ProductSearchAdd";
+
 
 /**
  * Order Details Form (Formik child component)
@@ -181,7 +182,7 @@ const OrderDetailsFormUp = () => {
       <div className="space-y-3 p-3 border rounded">
         <SectionTitle>Items</SectionTitle>
         <div className="col-span-6">
-          <ProductSearchAdd />
+          <ProductSearchAddWithCreate />
         </div>
         <FieldArray
           name="items"
