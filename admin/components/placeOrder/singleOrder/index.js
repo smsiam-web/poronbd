@@ -116,7 +116,7 @@ const OrderDetails = ({ onClick, item }) => {
                   id="name"
                   className="text-sm sm:text-lg md:text-xl xl:text-2xl font-medium"
                 >
-                  {singleOrder?.customer_details?.customer_name}
+                  {singleOrder?.customer?.name}
                 </span>
               </div>
               <div>
@@ -175,7 +175,7 @@ const OrderDetails = ({ onClick, item }) => {
                           className="text-sm sm:text-lg md:text-xl text-title font-mono"
                           id={`item_0${++i}`}
                         >
-                          {item.title}
+                          {item?.title}
                         </h2>
                       </div>
                       <div className="flex justify-between w-7/12">
@@ -183,19 +183,19 @@ const OrderDetails = ({ onClick, item }) => {
                           className="text-sm sm:text-lg md:text-xl text-title font-mono"
                           id={`item_0${i}_quantity`}
                         >
-                          {item.quantity}
+                          {item?.quantity} {item?.unit}
                         </span>
                         <span
                           className="text-sm sm:text-lg md:text-xl text-title font-mono"
                           id={`item_0${i}_price`}
                         >
-                          {item.price}
+                          {item?.price}
                         </span>
                         <span
                           className="text-sm sm:text-lg md:text-xl text-title font-mono"
                           id={`item_0${i}_total_price`}
                         >
-                          {item.line_total}/-
+                          {item?.line_total}/-
                         </span>
                       </div>
                     </div>

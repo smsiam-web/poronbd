@@ -97,12 +97,6 @@ export default function ProductSearchAddWithCreate() {
         }))
       : [];
 
-    // const options = Array.isArray(p?.options)
-    // ? p.options.map((ov) => ({ name: ov.name || "", value: ov.values || "" }))
-    // : [];
-
-    console.log(options);
-
     const newItem = {
       product_id: p.id ?? null,
       variant_id: variant?.id ?? null,
