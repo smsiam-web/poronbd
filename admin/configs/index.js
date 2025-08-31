@@ -34,12 +34,6 @@ export const menus = [
     secure: true,
   },
   {
-    pathname: "/place-order/add-jannatfashon",
-    Icon: GiAmpleDress,
-    title: "Jannat Fashon",
-    secure: true,
-  },
-  {
     pathname: "/delivery-report",
     Icon: TbFileReport,
     title: "Delivery Report",

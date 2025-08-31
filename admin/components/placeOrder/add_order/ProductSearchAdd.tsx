@@ -12,13 +12,21 @@ import { db } from "@/app/utils/firebase"; // Firestore v8 instance
 
 const MAX_RESULTS = 8;
 const DEBOUNCE_MS = 350;
+type ProductHit = {
+  id: string;
+  title?: string;
+  slug?: string;
+  single_sku?: string;
+  variants?: Array<{ sku?: string }>;
+  // add any other fields you read from d.data()
+};
 
 export default function ProductSearchAddWithCreate() {
   const { values, setFieldValue } = useFormikContext();
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState([]);
-  const [error, setError] = useState("");
+const [results, setResults] = useState<ProductHit[]>([]);
+const [error, setError] = useState<string>("");
   const [showCreate, setShowCreate] = useState(false);
 
   // Create form state
@@ -28,40 +36,82 @@ export default function ProductSearchAddWithCreate() {
   const [newQty, setNewQty] = useState(1);
   const [saveToProducts, setSaveToProducts] = useState(false);
 
+  
+
   const dq = useDebounce(q.trim().toLowerCase(), DEBOUNCE_MS);
 
-  useEffect(() => {
-    let alive = true;
-    async function run() {
-      setError("");
-      setResults([]);
-      if (!dq || dq.length < 2) return;
-      setLoading(true);
-      try {
-        const snap = await db
-          .collection("products")
-          .orderBy("title_lower")
-          .startAt(dq)
-          .endAt(dq + "\uf8ff")
-          .limit(MAX_RESULTS)
-          .get();
+  // useEffect(() => {
+  //   let alive = true;
+  //   async function run() {
+  //     setError("");
+  //     setResults([]);
+  //     if (!dq || dq.length < 2) return;
+  //     setLoading(true);
+  //     try {
+  //       const snap = await db
+  //         .collection("products")
+  //         .orderBy("title_lower")
+  //         .startAt(dq)
+  //         .endAt(dq + "\uf8ff")
+  //         .limit(MAX_RESULTS)
+  //         .get();
 
-        if (!alive) return;
-        const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setResults(rows);
-      } catch (e) {
-        if (!alive) return;
-        console.error("Product search error:", e);
-        setError("Failed to search. Ensure products.title_lower exists.");
-      } finally {
-        if (alive) setLoading(false);
-      }
+  //       if (!alive) return;
+  //       const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  //       setResults(rows);
+  //     } catch (e) {
+  //       if (!alive) return;
+  //       console.error("Product search error:", e);
+  //       setError("Failed to search. Ensure products.title_lower exists.");
+  //     } finally {
+  //       if (alive) setLoading(false);
+  //     }
+  //   }
+  //   run();
+  //   return () => {
+  //     alive = false;
+  //   };
+  // }, [dq]);
+
+  useEffect(() => {
+  let alive = true;
+
+  async function run() {
+    setError("");
+    setResults([]);
+    if (!dq || dq.length < 2) return;
+    setLoading(true);
+    try {
+      const snap = await db
+        .collection("products")
+        .orderBy("title_lower")
+        .startAt(dq)
+        .endAt(dq + "\uf8ff")
+        .limit(MAX_RESULTS)
+        .get();
+
+      if (!alive) return;
+
+      const rows: ProductHit[] = snap.docs.map((d) => {
+        const data = d.data() as Omit<ProductHit, "id"> & Record<string, unknown>;
+        return { id: d.id, ...data };
+      });
+
+      setResults(rows);
+    } catch (e) {
+      if (!alive) return;
+      console.error("Product search error:", e);
+      setError("Failed to search. Ensure products.title_lower exists.");
+    } finally {
+      if (alive) setLoading(false);
     }
-    run();
-    return () => {
-      alive = false;
-    };
-  }, [dq]);
+  }
+
+  run();
+  return () => {
+    alive = false;
+  };
+}, [dq]);
 
   function addItemFromProduct(p) {
     let variant = null;
