@@ -17,11 +17,11 @@ const nextConfig = {
     FIREBASE_MESSAGING_SENDER_ID: "931161984423",
     FIREBASE_APP_ID: "1:931161984423:web:d0af5006edf08592737a82",
     FIREBASE_MEASUREMENT_ID: "G-G73985K5BK",
-    PATHAO_CLIENT_ID: "MYerm76dOB",
-    PATHAO_CLIENT_SECRET: "ZJHFzctgPkcpHrZOCGVKmNHPKWkAyZnbB3ad99ds",
+    PATHAO_CLIENT_ID: "YqaQkRGdnj",
+    PATHAO_CLIENT_SECRET: "BlsLo8rmc621S6mabzxVs2Aq1TwaXa39E8s44bxD",
     PATHAO_BASE_URL: "https://api-hermes.pathao.com",
-    PATHAO_USERNAME: "rahulislan19@gmail.com",
-    PATHAO_PASSWORD: "Rahul@12345",
+    PATHAO_USERNAME: "smsiam696@gmail.com",
+    PATHAO_PASSWORD: "siam.siam",
   },
 };
 

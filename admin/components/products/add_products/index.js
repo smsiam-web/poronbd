@@ -8,110 +8,6 @@ import ProductDetailsFormUp from "./ProductDetailsFormUp";
 import { porductInitialValues, productValidationSchema } from "@/lib/validationSchema";
 import { notifications } from "@mantine/notifications";
 
-// const validationSchema = Yup.object().shape({
-//   id: Yup.number().required(),
-//   store_id: Yup.number().optional(),
-//   single_sku: Yup.string().required("SKU is required"),
-//   title: Yup.string().required("Product title is required"),
-//   slug: Yup.string().required("Slug is required"),
-//   status: Yup.string().oneOf(["draft", "active", "archived"]).required(),
-//   brand: Yup.string().nullable(),
-//   description: Yup.string().nullable(),
-
-//   categories: Yup.array().of(
-//     Yup.object().shape({
-//       id: Yup.string().required(),
-//       name: Yup.string().optional(),
-//       slug: Yup.string().optional(),
-//     })
-//   ),
-
-//   options: Yup.array().of(
-//     Yup.object().shape({
-//       id: Yup.number().optional(),
-//       name: Yup.string().required("Option name is required"),
-//       values: Yup.array()
-//         .of(
-//           Yup.object().shape({
-//             id: Yup.number().optional(),
-//             value: Yup.string().required("Option value is required"),
-//             swatch_hex: Yup.string()
-//               .matches(/^#([0-9A-F]{3}){1,2}$/i, "Invalid color hex")
-//               .nullable(),
-//           })
-//         )
-//         .min(1, "Each option must have at least 1 value"),
-//     })
-//   ),
-
-//   variants: Yup.array()
-//     .of(
-//       Yup.object().shape({
-//         id: Yup.number().optional(),
-//         sku: Yup.string().required("SKU is required"),
-//         barcode: Yup.string().nullable(),
-//         price: Yup.number().required("Price is required").min(0),
-//         compare_at_price: Yup.number().nullable(),
-//         compare_at_price: Yup.number().nullable(),
-//         currency: Yup.string()
-//           .length(3, "Currency must be ISO code")
-//           .required(),
-//         is_active: Yup.boolean().required(),
-
-//         option_values: Yup.array()
-//           .of(
-//             Yup.object().shape({
-//               option_id: Yup.number().optional(),
-//               option_name: Yup.string().optional(),
-//               value_id: Yup.number().optional(),
-//               value: Yup.string().optional(),
-//             })
-//           )
-//           .min(1, "Variant must have option values"),
-
-//         inventory: Yup.array()
-//           .of(
-//             Yup.object().shape({
-//               location_code: Yup.string().required(),
-//               stock_on_hand: Yup.number().min(0).required(),
-//               stock_reserved: Yup.number().min(0).default(0),
-//               reorder_point: Yup.number().min(0).default(0),
-//               allow_backorder: Yup.boolean().default(false),
-//             })
-//           )
-//           .required("Inventory is required"),
-
-//         images: Yup.array()
-//           .of(
-//             Yup.object().shape({
-//               id: Yup.number().optional(),
-//               url: Yup.string().url().required(),
-//               alt_text: Yup.string().nullable(),
-//               position: Yup.number().required(),
-//             })
-//           )
-//           .optional(),
-
-//         weight_grams: Yup.number().min(0).nullable(),
-//         dimensions_cm: Yup.object()
-//           .shape({
-//             length: Yup.number().nullable(),
-//             width: Yup.number().nullable(),
-//             height: Yup.number().nullable(),
-//           })
-//           .nullable(),
-//       })
-//     )
-//     .min(1, "At least one variant is required"),
-
-//   attributes: Yup.object().nullable(),
-
-//   seo: Yup.object().shape({
-//     title: Yup.string().max(255).nullable(),
-//     description: Yup.string().max(300).nullable(),
-//   }),
-// });
-
 const AddProduts = ({ onClick }) => {
   const [loading, setLoading] = useState(false);
   const [product, setProduct] = useState(null);
@@ -132,9 +28,9 @@ const placeProductHandler = async (values) => {
       // create a new doc id if none provided
       const ref = col.doc();
       docId = ref.id;
-      await ref.set({ ...values, id: docId, timestamp }, { merge: true });
+      await ref.set({ ...values, id: docId, timestamp,  title_lower: values?.title.toLowerCase(), }, { merge: true });
     } else {
-      await col.doc(docId).set({ ...values, timestamp }, { merge: true });
+      await col.doc(docId).set({ ...values, timestamp, title_lower: values?.title.toLowerCase(), }, { merge: true });
     }
 
     notifications.show({

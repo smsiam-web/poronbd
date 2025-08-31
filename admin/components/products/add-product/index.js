@@ -29,9 +29,9 @@ const AddProdut = ({ onClick }) => {
        // create a new doc id if none provided
        const ref = col.doc();
        docId = ref.id;
-       await ref.set({ ...values, id: docId, timestamp }, { merge: true });
+       await ref.set({ ...values, id: docId, timestamp, title_lower: values?.title.toLowerCase() }, { merge: true });
      } else {
-       await col.doc(docId).set({ ...values, timestamp }, { merge: true });
+       await col.doc(docId).set({ ...values, timestamp, title_lower: values?.title.toLowerCase() }, { merge: true });
      }
  
      notifications.show({
@@ -70,7 +70,7 @@ const AddProdut = ({ onClick }) => {
               <div className="flex gap-2 items-center justify-between py-3 px-6 md:px-4">
                 <div className="grid gap-1">
                   <h1 className="text-tile text-xl font-medium md:text-2xl">
-                    Place new order JANNAT Fashon
+                    Add Product
                   </h1>
                   <p className="text-sm md:text-lg text-sub-title">
                     Add your product and necessary information from here.

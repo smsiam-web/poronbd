@@ -15,7 +15,7 @@ const CategoryForm = ({uid, urls}) => {
   };
   return (
     <div className="max-h-full">
-      <label className="lable">
+      {/* <label className="lable">
         Category Image<span className="text-red-500">*</span>
       </label>
       <FileUpload
@@ -39,7 +39,7 @@ const CategoryForm = ({uid, urls}) => {
           placeholder="Category Icon URL"
           items={null}
         />
-      </div>
+      </div> */}
       <div>
         <span className="lable">Category Title</span>
         <FormInput

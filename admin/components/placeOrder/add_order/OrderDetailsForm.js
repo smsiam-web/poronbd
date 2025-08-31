@@ -11,9 +11,12 @@ import { useSelector } from "react-redux";
 import { selectSingleCustomer } from "@/app/redux/slices/singleCustomerSlice";
 import { selectWeightDetails } from "@/app/redux/slices/tempWeightDetails";
 import { selectUser } from "@/app/redux/slices/authSlice";
+import { CATEGORY } from "@/admin/configs";
+import FormDropdownOpt from "../../shared/Form/FormDropdownOpt";
+import { FieldArray, getIn, useFormikContext } from "formik";
 
 const OrderDetailsForm = ({ singleOrder, rest }) => {
-  const [mango, setMango] = useState(null);
+  const [products, setProducts] = useState(null);
   const [khejurGur, setKhejurGur] = useState(null);
   const [AkherGur, setAkherGur] = useState(null);
   const [honey, setHoney] = useState(null);
@@ -68,46 +71,11 @@ const OrderDetailsForm = ({ singleOrder, rest }) => {
       .collection("products")
       .orderBy("timestamp", "desc")
       .onSnapshot((snap) => {
-        const mango = [];
-        const khejur = [];
-        const akhergur = [];
-        const honeys = [];
-        const moslagura = [];
-        const others = [];
+        const item = [];
         snap.docs.map((doc) => {
-          doc.data().product_details.product_type === "আম" &&
-            mango.push({
-              ...doc.data().product_details,
-            });
-          doc.data().product_details.parent_category === "খেজুরের গুড়" &&
-            khejur.push({
-              ...doc.data().product_details,
-            });
-          doc.data().product_details.parent_category === "আখের গুড়" &&
-            akhergur.push({
-              ...doc.data().product_details,
-            });
-          doc.data().product_details.parent_category === "মধু" &&
-            honeys.push({
-              ...doc.data().product_details,
-            });
-          doc.data().product_details.parent_category === "মশলা গুঁড়া" &&
-            moslagura.push({
-              ...doc.data().product_details,
-            });
-          (doc.data().product_details.parent_category === "সরিষার তেল" ||
-            doc.data().product_details.parent_category === "ঘি" ||
-            doc.data().product_details.parent_category === "কুমড়া বড়ি") &&
-            others.push({
-              ...doc.data().product_details,
-            });
+          item.push(doc.data());
         });
-        setMango(mango);
-        setKhejurGur(khejur);
-        setAkherGur(akhergur);
-        setHoney(honeys);
-        setMosla(moslagura);
-        setOthers(others);
+        setProducts(item);
       });
 
     return () => {
@@ -212,19 +180,67 @@ const OrderDetailsForm = ({ singleOrder, rest }) => {
       id: "1",
     },
   ];
-  const Courier = [
-    {
-      name: "Pathao",
-      id: "Pathao",
-    },
-    {
-      name: "SteadFast",
-      id: "SteadFast",
-    },
-  ];
+
 
   const obj = singleOrder?.order;
   console.log(cities);
+
+    const { values, setFieldValue } = useFormikContext(); // <-- no <any>
+  
+    const hasVariants = !!getIn(values, "has_variants");
+  
+    const generateItemOptions = () => {
+      const colorVals = (getIn(values, "options[0].values") || [])
+        .map((v) => (v ? v.value : ""))
+        .filter(Boolean);
+      const sizeVals = (getIn(values, "options[1].values") || [])
+        .map((v) => (v ? v.value : ""))
+        .filter(Boolean);
+  
+      const colors = colorVals.length ? colorVals : [""];
+      const sizes = sizeVals.length ? sizeVals : [""];
+  
+      const rows = colors.flatMap((c) =>
+        sizes.map((s) => {
+          const option_values = [];
+          if (c) option_values.push({ option_name: "Color", id: c });
+          if (s) option_values.push({ option_name: "Size", id: s });
+          return {
+            sku: "",
+            currency: getIn(values, "currency") || "BDT",
+            price: "",
+            compare_at_price: "",
+            is_active: true,
+            option_values,
+          };
+        })
+      );
+  
+      setFieldValue(
+        "variants",
+        rows.length
+          ? rows
+          : [
+              {
+                sku: "",
+                currency: getIn(values, "currency") || "BDT",
+                price: "",
+                compare_at_price: "",
+                is_active: true,
+                option_values: [],
+                inventory: [
+                  {
+                    location_code: "MAIN",
+                    stock_on_hand: 0,
+                    stock_reserved: 0,
+                    reorder_point: 0,
+                    allow_backorder: false,
+                  },
+                ],
+              },
+            ]
+      );
+    };
 
   return (
     <div className="max-h-full">
@@ -307,200 +323,144 @@ const OrderDetailsForm = ({ singleOrder, rest }) => {
       </div>
 
       <div>
-        <Tabs
-          color="violet"
-          defaultValue={rest ? "mango" : "khejurGur"}
-          variant="pills"
-        >
+        <Tabs color="violet" defaultValue={CATEGORY[0]?.name} variant="pills">
           <Tabs.List>
-            <Tabs.Tab value="khejurGur" disabled={rest}>
-              খেজুরের গুড়
-            </Tabs.Tab>
-
-            <Tabs.Tab value="akherGur" disabled={rest}>
-              আখের গুড়
-            </Tabs.Tab>
-            <Tabs.Tab value="mango" disabled={!rest}>
-              আম
-            </Tabs.Tab>
-
-            <Tabs.Tab value="honey" disabled={rest}>
-              মধু
-            </Tabs.Tab>
-            <Tabs.Tab value="mosla" disabled={rest}>
-              মশলা গুঁড়া
-            </Tabs.Tab>
-            <Tabs.Tab value="others" disabled={rest}>
-              অন্যান্য
-            </Tabs.Tab>
+            {CATEGORY?.map((item) => (
+              <Tabs.Tab key={item?.name} value={item?.name}>
+                {item?.name}
+              </Tabs.Tab>
+            ))}
           </Tabs.List>
 
-          <Tabs.Panel value="mango" pt="xs">
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-              {mango?.map((i) => (
-                <div
-                  key={i.yup}
-                  className="p-2 bg-blue-500 rounded-md col-span-1"
-                >
-                  <span className="pb-10 text-base text-white">
-                    #{i.product_name} ১২ কেজি
-                  </span>
-                  <div className="flex items-center pt-1 sm:pt-2">
-                    <div className="w-2/3">
-                      <FormInput
-                        className=""
-                        type="number"
-                        name={i.yup}
-                        id="mango"
-                        item={i}
-                        placeholder=""
-                      />
-                    </div>
-                    <span className="text-sm text-white font-bold">
-                      ক্যারেট
-                    </span>
-                  </div>
-                  <div className="bg-slate-100 p-1 text-xs rounded-lg flex  justify-around">
-                    <div className="text-xs">
-                      <h1 className="text-sm leading-tight font-medium">
-                        Sale
-                      </h1>
-                      <span className="text-sm bg-green-200 font-semibold text-green-700 px-2 rounded-full">
-                        {i.sale_price}tk
-                      </span>
-                    </div>
-                    <div className="text-xs">
-                      <h1 className="text-sm leading-tight font-medium">
-                        Weight
-                      </h1>
-                      <span className="text-sm bg-green-200 text-green-700 font-semibold px-2 rounded-full">
-                        {weightDetails.name === i.yup
-                          ? weightDetails.weight
-                          : 0}
-                        kg
-                      </span>
-                    </div>
-                    <div className="text-xs">
-                      <h1 className="text-sm leading-tight font-medium">
-                        Total
-                      </h1>
-                      <span className="text-sm bg-green-200 font-semibold text-green-700 px-2 rounded-full">
-                        {weightDetails.name === i.yup ? weightDetails.price : 0}
-                        /-
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {mango?.length === 0 && (
-                <h1 className="text-lg text-slate-300 text-center col-span-2">
-                  Product Not Found...!!!
-                </h1>
-              )}
-            </div>
-          </Tabs.Panel>
-          <Tabs.Panel value="akherGur" pt="xs">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {AkherGur?.map((i) => (
-                <div
-                  key={i.yup}
-                  className="p-2 bg-blue-500 rounded-md col-span-1"
-                >
-                  <span className="pb-10 text-lg text-white">
-                    #{i.child_category}
-                  </span>
-                  <div className="flex items-center pt-1 sm:pt-2">
-                    <div className="w-2/3">
-                      <FormInput type="number" name={i.yup} placeholder="" />
-                    </div>
-                    <span className="text-lg text-white font-bold">.kg</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Tabs.Panel>
-          <Tabs.Panel value="khejurGur" pt="xs">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {khejurGur?.map((i) => (
-                <div
-                  key={i.yup}
-                  className="p-2 bg-blue-500 rounded-md col-span-1"
-                >
-                  <span className="pb-10 text-lg text-white">
-                    #{i.child_category}
-                  </span>
-                  <div className="flex items-center pt-1 sm:pt-2">
-                    <div className="w-2/3">
-                      <FormInput type="number" name={i.yup} placeholder="" />
-                    </div>
-                    <span className="text-lg text-white font-bold">.kg</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Tabs.Panel>
+          {CATEGORY?.map((cat) => (
+            <Tabs.Panel value={cat?.name} key={cat?.name} pt="xs">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {products?.map(
+                  (item) =>
+                    item?.categories[0].id === cat?.name && (
+                      <div
+                        key={item?.id}
+                        className="p-2 bg-blue-500 rounded-md col-span-1"
+                      >
+                        <span className="pb-10 text-md text-white">
+                          {item?.variants[0].sku}
+                        </span>
+                        <div className="flex items-center pt-1 sm:pt-2">
+                          <div className="w-2/3">
+                            <FormInput
+                              type="number"
+                              name={item?.variants[0].sku}
+                              placeholder=""
+                            />
+                          </div>
 
-          <Tabs.Panel value="others" pt="xs">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {other?.map((i) => (
-                <div
-                  key={i.yup}
-                  className="p-2 bg-blue-500 rounded-md col-span-1"
-                >
-                  <span className="pb-10 text-lg text-white">
-                    #{i.child_category}
-                  </span>
-                  <div className="flex items-center pt-1 sm:pt-2">
-                    <div className="w-2/3">
-                      <FormInput type="number" name={i.yup} placeholder="" />
-                    </div>
-                    <span className="text-lg text-white font-bold">.kg</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Tabs.Panel>
-
-          <Tabs.Panel value="honey" pt="xs">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {honey?.map((i) => (
-                <div
-                  key={i.yup}
-                  className="p-2 bg-blue-500 rounded-md col-span-1"
-                >
-                  <span className="pb-10 text-lg text-white">
-                    #{i.child_category}
-                  </span>
-                  <div className="flex items-center pt-1 sm:pt-2">
-                    <div className="w-2/3">
-                      <FormInput type="number" name={i.yup} placeholder="" />
-                    </div>
-                    <span className="text-lg text-white font-bold">.kg</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Tabs.Panel>
-          <Tabs.Panel value="mosla" pt="xs">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {mosla?.map((i) => (
-                <div
-                  key={i.yup}
-                  className="p-2 bg-blue-500 rounded-md col-span-1"
-                >
-                  <span className="pb-10 text-lg text-white">
-                    #{i.child_category}
-                  </span>
-                  <div className="flex items-center pt-1 sm:pt-2">
-                    <div className="w-2/3">
-                      <FormInput type="number" name={i.yup} placeholder="" />
-                    </div>
-                    <span className="text-lg text-white font-bold">.kg</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Tabs.Panel>
+                          <span className="text-lg text-white font-bold">
+                            .{item?.attributes?.Unit}
+                          </span>
+                          
+                        </div>
+                        <div className="flex gap-2">
+                          {item?.options?.map((opt) => (
+                            <div className="w-2/3" key={opt?.name}>
+                            <FormDropdownOpt
+                              name={`${item?.variants[0].sku}_${opt?.name}`}
+                              placeholder={opt?.name}
+                              items={opt?.values}
+                            />
+                          </div>
+                          ))}
+                        </div>
+                          {/* VARIANTS LIST */}
+                              {true && (
+                                <div className="space-y-3 p-3 border rounded">
+                                  <div className="font-medium">Variants (writes to product.variants[])</div>
+                        
+                                  <FieldArray
+                                    name="items"
+                                    render={({ push, remove }) => (
+                                      <>
+                                        {(getIn(values, "items") || []).map((_, i) => (
+                                          <div key={i} className="grid grid-cols-6 gap-3 p-3 border rounded">
+                                            <div className="col-span-6 flex items-center justify-between">
+                                              <div className="font-medium">Items {i + 1}</div>
+                                              <button
+                                                type="button"
+                                                className="text-sm text-red-500"
+                                                onClick={() => remove(i)}
+                                              >
+                                                Remove
+                                              </button>
+                                            </div>
+                        
+                                            <div className="col-span-2">
+                                              <span>SKU</span>
+                                              <FormInput name={`variants[${i}].sku`} placeholder="SKU" />
+                                            </div>
+                        
+                                           
+                        
+                                            <div>
+                                              <span>Price (current)</span>
+                                              <FormInput
+                                                name={`variants[${i}].price`}
+                                                placeholder="0.00"
+                                                type="number"
+                                              />
+                                            </div>
+                        
+                                           
+                                                            
+                        
+                                            {/* Option Values */}
+                                            <div className="col-span-3">
+                                              <span>Color</span>
+                                              <FormDropdown
+                                                name={`variants[${i}].option_values[0].value`}
+                                                placeholder="Select color"
+                                                items={(getIn(values, "options[0].values") || []).map(
+                                                  (v) => ({ name: v.value, id: v.value })
+                                                )}
+                                              />
+                                              <FormInput
+                                                name={`variants[${i}].option_values[0].option_name`}
+                                                defaultValue="Color"
+                                                hidden
+                                              />
+                                            </div>
+                                            <div className="col-span-3">
+                                              <span>Size</span>
+                                              <FormDropdown
+                                                name={`variants[${i}].option_values[1].value`}
+                                                placeholder="Select size"
+                                                items={(getIn(values, "options[1].values") || []).map(
+                                                  (v) => ({ name: v.value, id: v.value })
+                                                )}
+                                              />
+                                              <FormInput
+                                                name={`variants[${i}].option_values[1].option_name`}
+                                                defaultValue="Size"
+                                                hidden
+                                              />
+                                            </div>
+                        
+                                           
+                                            
+                                          </div>
+                                        ))}
+                        
+                               
+                                      </>
+                                    )}
+                                  />
+                                </div>
+                              )}
+                        
+                      </div>
+                    )
+                )}
+              </div>
+            </Tabs.Panel>
+          ))}
         </Tabs>
       </div>
       <div className="mt-3">

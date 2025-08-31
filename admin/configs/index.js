@@ -34,12 +34,6 @@ export const menus = [
     secure: true,
   },
   {
-    pathname: "/place-order/add-mango",
-    // Icon: AiOutlineAppstoreAdd,
-    title: "🥭 Place Mango",
-    secure: true,
-  },
-  {
     pathname: "/place-order/add-jannatfashon",
     Icon: GiAmpleDress,
     title: "Jannat Fashon",
@@ -155,6 +149,20 @@ export const PCATEGORY = [
     id: "রংপুরের আম",
     path: "/rongpureraam",
   },
+];
+export const CATEGORY = [
+  {
+    name: "Fashon",
+    id:"Fashon"
+  },
+  {
+    name: "Organic Food",
+    id: "Organic Food"
+  },
+  {
+    name: "Mangoo",
+    id: "Mangoo"
+  }
 ];
 
 export const CCATEGORY = [

@@ -1,125 +1,96 @@
-import React, { useEffect, useState } from "react";
-import OrderDetailsForm from "../add_order/OrderDetailsForm";
-import * as Yup from "yup";
-import { AppForm, FormBtn } from "../../shared/Form";
-import { db, timestamp } from "@/app/utils/firebase";
-import Button from "../../shared/Button";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
 import { useDispatch, useSelector } from "react-redux";
+import { notifications } from "@mantine/notifications";
+
+import { AppForm, FormBtn } from "../../shared/Form";
+import Button from "../../shared/Button";
+
+import { db, timestamp } from "@/app/utils/firebase"; // timestamp not needed; we’ll use new Date().toISOString()
 import { selectUser } from "@/app/redux/slices/authSlice";
-import { Today } from "@/admin/utils/helpers";
 import { selectConfig } from "@/app/redux/slices/configSlice";
-import axios from "axios";
 import {
   selectSingleCustomer,
   updateSingleCustomer,
 } from "@/app/redux/slices/singleCustomerSlice";
-import { selectProduct } from "@/app/redux/slices/productSlice";
-import { notifications } from "@mantine/notifications";
 import firebase from "firebase";
+import { orderValidationSchemaCOD } from "@/lib/validationSchema";
+import OrderDetailsFormUp from "../add_order/OrderDetails";
 
-const validationSchema = Yup.object().shape({
-  delivery_type: Yup.boolean().required().label("Delivery type"),
-  phone_number: Yup.string()
-    .matches(/^[0-9]{11}$/, "Must be exactly 11 digits")
-    .required()
-    .label("Phone number"),
-  customer_name: Yup.string().max(50).required().label("Name"),
-  received_by: Yup.string().max(60).required().label("Received By"),
-  order_from: Yup.string().max(60).required().default("Messenger Order"),
-  customer_address: Yup.string().max(300).required().label("Address"),
-  ad_ID: Yup.string().max(5).label("Ad ID"),
-  salePrice: Yup.number().required().label("Sale Price"),
-  note: Yup.string().max(400).label("Note"),
-  invoice_Note: Yup.string().max(400).label("Invoice Note"),
-});
+// Helper to uppercase currency and normalize method casing, etc.
+const normalizeOrder = (values) => {
+  const now = new Date().toISOString();
+
+  const v = { ...values };
+
+  // Ensure required top-level timestamps exist
+  v.created_at = v.created_at || now;
+  v.updated_at = now;
+
+  // Normalize currency (top-level + items)
+  v.currency = (v.currency || "BDT").toUpperCase();
+  v.items = (v.items || []).map((it) => ({
+    ...it,
+    currency: (it.currency || v.currency || "BDT").toUpperCase(),
+    // Keep line_total consistent; UI already auto-computes it,
+    // but recompute just in case:
+    line_total:
+      typeof it.line_total === "number"
+        ? it.line_total
+        : Number(it.price || 0) * Number(it.quantity || 0),
+  }));
+
+  // Payment/fulfillment normalizations
+  v.payment = {
+    method: (v.payment?.method || "cod").toLowerCase(),
+    status: v.payment?.status || "unpaid",
+    transaction_id: v.payment?.transaction_id || null,
+  };
+
+  v.fulfillment = {
+    status: v.fulfillment?.status || "unfulfilled",
+    courier: v.fulfillment?.courier || "Pathao",
+    tracking_numbers: v.fulfillment?.tracking_numbers || [],
+  };
+
+  // Totals: keep items sum and grand consistent
+  const itemsSum = v.items.reduce((s, it) => s + Number(it.line_total || 0), 0);
+  const discount = Number(v?.totals?.discount || 0);
+  const shipping = Number(v?.totals?.shipping || 0);
+  const grand = +(itemsSum - discount + shipping).toFixed(2);
+
+  v.totals = {
+    items: +itemsSum.toFixed(2),
+    discount: +discount.toFixed(2),
+    shipping: +shipping.toFixed(2),
+    grand,
+  };
+
+  // Default meta/source
+  v.meta = { source: v?.meta?.source || "web" };
+
+  return v;
+};
+
 const AddNewOrder = ({ onClick }) => {
-  const [config, setConfig] = useState(useSelector(selectConfig) || null);
   const [loading, setLoading] = useState(false);
-  const [orderResponse, setOrderResponse] = useState(false);
+  const [config] = useState(useSelector(selectConfig) || null);
+
   const user = useSelector(selectUser);
   const router = useRouter();
-  const [products, setProducts] = useState(null);
-  const [uid, setInvoiceID] = useState(null);
-
-  const getCustomer = useSelector(selectSingleCustomer);
-  const p = useSelector(selectProduct);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    const temp = [];
-    const item = p?.map((i) => temp.push(i?.product_details));
-    setProducts(temp);
-  }, []);
+  const getCustomer = useSelector(selectSingleCustomer);
 
-  // Get products from firebase database
-  useEffect(() => {
-    const unSub = db.collection("orderID").onSnapshot((snap) => {
-      snap.docs.map((doc) => {
-        setInvoiceID(doc.data());
+   const placeOrder3 = async (values) => {
+    console.log("p3", values);
+          // Normalize & validate with Yup
+      const normalized = normalizeOrder(values);
+      await orderValidationSchemaCOD.validate(normalized, {
+        abortEarly: false,
       });
-    });
-
-    return () => {
-      unSub();
-    };
-  }, []);
-
-  const placeOrder = async (values) => {
-    setLoading(true);
-    const order = [];
-    let totalPrice = 0;
-    let weight = 0;
-
-    products &&
-      products.map((item) => {
-        const yup = item.yup;
-
-        if (values[yup]) {
-          const title = item.yup.split("_");
-          let s = [];
-
-          title &&
-            title.map((e) => {
-              s.push(e[0].toUpperCase() + e.slice(1));
-            });
-
-          weight += values[yup];
-
-          if (item?.product_type === "আম") {
-            order.push({
-              title: s.join(" "),
-              quantity: values[yup] * 12,
-              lot: values[yup],
-              price: item.sale_price,
-              total_price: values[yup] * 12 * item.sale_price,
-            });
-          } else {
-            order.push({
-              title: s.join(" "),
-              quantity: values[yup],
-              price: item.sale_price,
-              total_price: values[yup] * item.sale_price,
-            });
-          }
-        }
-      });
-
-    order &&
-      order.map((p) => {
-        totalPrice += p.total_price;
-      });
-
-    const deliveryCrg =
-      weight >= 1 && weight === 1 ? 130 : 130 + (weight - 1) * 20;
-    const discount =
-      totalPrice + deliveryCrg - values.salePrice > 0
-        ? totalPrice + deliveryCrg - values?.salePrice
-        : "0";
-
-    const date = Today();
-
-    const counterRef = db.collection("counters").doc("orderCounter");
+       console.log( normalized);
+    const counterRef = db.collection("counters").doc("JFOrderCounter");
 
     db.runTransaction(async (transaction) => {
       const counterDoc = await transaction.get(counterRef);
@@ -136,97 +107,87 @@ const AddNewOrder = ({ onClick }) => {
         return counterDoc.data().value + 1; // Return new value after increment
       }
     })
-      .then((newOrderId) => {
-        const orderID = `RA0${newOrderId}`;
-        const cusetomer_id = `RAC0${newOrderId}`;
-        // Set your API key and secret key
-        const apiKey = config[0]?.values.sfc_api_key;
-        const secretKey = config[0]?.values.sfc_secret_key;
+      .then(async (newOrderId) => {
+        const orderID = `PR0${newOrderId}`;
+        const customer_id = `PRC0${newOrderId}`;
 
-        // Prepare headers for the request
-        const headers = new Headers();
-        headers.append("Api-Key", apiKey);
-        headers.append("Secret-Key", secretKey);
-        headers.append("Content-Type", "application/json");
-
-        const orderData = {
-          cod_amount: `${values.salePrice}`,
-          invoice: `${orderID}`,
-          note: `${values.note}`,
-          recipient_address: `${
-            values?.delivery_type ? "(HOME Delivery) " : "(POINT Delivery) "
-          }${values.customer_address}`,
-          recipient_name: `${values.customer_name}`,
-          recipient_phone: `${values.phone_number}`,
+        const orderPayload = {
+          store_id: `${normalized?.items[0]?.store_id}`,
+          merchant_order_id: `${orderID}`,
+          recipient_name: `${normalized?.customer?.name}`,
+          recipient_phone: `${normalized?.customer?.phone}`,
+          recipient_address: `${normalized?.shipping_address?.street}`,
+          // recipient_city: 1,
+          // recipient_zone: 10,
+          // recipient_area: 101,
+          delivery_type: 48,
+          item_type: 2,
+          special_instruction: `${normalized?.notes}`,
+          item_quantity: 1,
+          item_weight: "1",
+          item_description: "",
+          amount_to_collect: `${normalized?.totals?.grand}`,
         };
 
         try {
-          const response = fetch(
-            "https://portal.steadfast.com.bd/api/v1/create_order",
-            {
-              method: "POST",
-              headers: headers,
-              body: JSON.stringify(orderData),
-            }
-          )
-            .then((response) => response.json()) // Resolve JSON data
-            .then((data) => {
-              console.log(data);
-              notifications.show({
-                title: data?.message || "Something went Wrong",
-                message: `"Status:" ${data?.status}`,
-                color: "blue",
-              });
-              const tracking_code = data?.consignment?.tracking_code;
-              const sfc = {
-                consignment_id: data?.consignment?.consignment_id || null,
-                tracking_code: data?.consignment?.tracking_code || null,
-              };
-              dispatch(updateSingleCustomer(null));
-              sendConfirmationMsg(values, orderID, tracking_code);
-              createCustomer(values, date, cusetomer_id);
-              const orderData = {
-                sfc,
-                deliveryCrg,
-                weight,
-                customer_details: values,
-                discount,
-                totalPrice,
-                date,
-                order,
-                timestamp,
-                placeBy: user.name,
-                placeById: user.staff_id,
-                status: "Pending",
-                orderID,
-              };
-              console.log(orderData);
-              try {
-                db.collection("placeOrder").doc(orderID).set(orderData);
-              } catch (error) {
-                notifications.show({
-                  title: "Failed to place order",
-                  message: `Please try again later..`,
-                  color: "orange",
-                });
-                // setLoading(false);
-                setOrderResponse(null);
-
-                dispatch(updateSingleCustomer(null));
-                console.error("Error placing order:", error);
-              } finally {
-                router.push("/place-order/id=" + orderID);
-              }
-            });
-        } catch (error) {
-          notifications.show({
-            title: "Something went wrong!!!",
-            message: `Please try again later..`,
-            color: "orange",
+   
+          const response = await fetch("/api/pathao/place-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(orderPayload),
           });
-          // setLoading(false);
-          setOrderResponse(null);
-          console.log("Error SFC entry: ", error);
+          const result = await response.json();
+          const orderData = {
+            normalized,
+            orderID,
+          };
+          // console.log(orderData);
+          try {
+             await db.collection("orders").doc(orderID).set(normalized);
+            // order ডক পড়ুন যাতে timestamp মিলে যায়
+           
+             updateCounters(orderData);
+     
+          } catch (error) {
+            notifications.show({
+              title: "Failed to place order",
+              message: `Please try again later..`,
+              color: "orange",
+              autoClose: 5000,
+            });
+
+            setOrderResponse(null);
+            console.error("Error placing order:", error);
+          } finally {
+            // setOrderResponse(null);
+            // dispatch(updateSingleCustomer(null));
+            router.push("/place-order/id=" + orderID);
+            // createCustomer(values, customer_id, timestamp);
+          // sendConfirmationMsg(values, customer_id, timestamp);
+
+          }
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${errorText}`);
+          }
+          if (result.type === "success" && result.code === 200) {
+            notifications.show({
+              title: "Success",
+              message: `Order placed successfully. Consignment ID: ${result.data.consignment_id}`,
+              color: "blue",
+              autoClose: 7000,
+            });
+          } else {
+            notifications.show({
+              title: "Error",
+              message: result.message || "Failed to place order.",
+              color: "red",
+              autoClose: 7000,
+            });
+          }
+        } catch (error) {
+          console.error("Transaction failed:", error);
         }
       })
       .catch((error) => {
@@ -234,78 +195,142 @@ const AddNewOrder = ({ onClick }) => {
           title: "Something went wrong!!!",
           message: `Please try again later..`,
           color: "orange",
+          autoClose: 7000,
         });
-        setOrderResponse(null);
-        // setLoading(false);
+        // setOrderResponse(null);
+        setLoading(false);
         console.error("Transaction failed:", error);
       });
-    // setLoading(false);
   };
 
-  const sendConfirmationMsg = async (values, orderID, tracking_code = "") => {
-    const customer_name = values?.customer_name || "Customer";
-    const company_name = config[0]?.values.company_name;
-    const company_contact = config[0]?.values.company_contact;
 
-    const url = "https://api.sms.net.bd/sendsms";
-    const apiKey = config[0]?.values.bulk_auth;
-    const message = `Dear ${customer_name}, Your order has been successfully placed at ${company_name}. Invoice No: ${orderID}. Please keep BDT: ${
-      values?.salePrice
-    }tk ready while receiving the parcel.${
-      tracking_code &&
-      ` Track your Parcel here: https://steadfast.com.bd/t/${tracking_code}`
-    } Hotline: +88${company_contact}. Thanks for being with us.`;
-    const to = values?.phone_number;
+  // Submit handler
+  
+  const placeOrder = async (rawValues) => {
+    console.log(rawValues);
+    try {
+      setLoading(true);
 
-    const formData = new FormData();
-    formData.append("api_key", apiKey);
-    formData.append("msg", message);
-    formData.append("to", to);
-
-    axios
-      .post(url, formData)
-      .then((response) => {
-        console.log(response.data);
-        notifications.show({
-          title: response?.data.msg,
-          message: "Message sent successfully",
-          color: "blue",
-        });
-      })
-      .catch((error) => {
-        throw new Error(error);
+      // Normalize & validate with Yup
+      const normalized = normalizeOrder(rawValues);
+      await orderValidationSchemaCOD.validate(normalized, {
+        abortEarly: false,
       });
-  };
-  // create Customer on firebase database
-  const createCustomer = async (values, cusetomer_id, timestamp) => {
-    await db.collection("createCustomer").doc(values?.phone_number).set({
-      cus_name: values.customer_name,
-      cus_contact: values.phone_number,
-      cus_address: values.customer_address,
-      cusetomer_id,
-      timestamp,
-    });
+
+      const counterRef = db.collection("counters").doc("JFOrderCounter");
+
+      db.runTransaction(async (transaction) => {
+        const counterDoc = await transaction.get(counterRef);
+
+        // If the document doesn’t exist, set it up with an initial value
+        if (!counterDoc.exists) {
+          transaction.set(counterRef, { value: 1 }); // Initialize with 1
+          return 1;
+        } else {
+          // Increment the existing value by 1
+          transaction.update(counterRef, {
+            value: firebase.firestore.FieldValue.increment(1),
+          });
+          return counterDoc.data().value + 1; // Return new value after increment
+        }
+      })
+
+      // Write to Firestore
+      const docRef = await db.collection("orders").add(normalized);
+      await docRef.update({
+        id: docRef.id,
+        updated_at: timestamp,
+      });
+
+      notifications.show({
+        title: "Order placed",
+        message: `Order ${docRef.id} created successfully.`,
+        color: "green",
+      });
+
+      // Optional: clear any selected customer in your store
+      dispatch(updateSingleCustomer(null));
+
+      // Navigate to order page
+      router.push(`/place-order/id=${docRef.id}`);
+    } catch (err) {
+      if (err?.name === "ValidationError") {
+        // Yup validation error formatting
+        notifications.show({
+          title: "Validation error",
+          message: "Please review the highlighted fields.",
+          color: "orange",
+        });
+        console.error(
+          "ValidationError details:",
+          err.inner?.map((e) => ({ path: e.path, message: e.message }))
+        );
+      } else {
+        notifications.show({
+          title: "Failed to place order",
+          message: "Please try again.",
+          color: "red",
+        });
+        console.error("Order create error:", err);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main>
-      <div className="pt-2">
+      <div>
         <AppForm
           initialValues={{
-            delivery_type: true || "",
-            phone_number: "",
-            customer_name: "",
-            customer_address: "",
-            salePrice: "",
-            received_by: "Admin",
-            order_from: "Messenger Order",
-            markAs: "Normal",
-            ad_ID: "",
-            invoice_Note: "",
-            note: "",
+            // --- Basics ---
+            status: "pending",
+            currency: "BDT",
+            store_id: "",
+
+            // --- Customer ---
+            customer: {
+              name: "",
+              phone: "",
+            },
+
+            // --- Addresses ---
+            shipping_address: {
+              street: "",
+              city: "",
+              state: "",
+              country: "BD",
+            },
+
+            // --- Payment & Fulfillment ---
+            payment: {
+              method: "cod",
+              status: "unpaid",
+              transaction_id: "",
+            },
+            fulfillment: {
+              status: "unfulfilled",
+              carrier: "",
+              tracking_numbers: [],
+            },
+
+            // --- Items & Discounts ---
+            items: [],
+
+            // --- Totals (items auto-calculated in the form) ---
+            totals: {
+              items: 0,
+              discount: 0,
+              shipping: 0,
+              grand: 0,
+            },
+
+            // --- Meta & notes ---
+            meta: { source: "web" },
+            notes: "",
           }}
-          onSubmit={placeOrder}
-          validationSchema={validationSchema}
+          validationSchema={orderValidationSchemaCOD}
+          onSubmit={placeOrder3}
         >
           <div className="bg-white max-w-2xl mx-auto rounded-xl relative">
             <div className="w-full">
@@ -322,7 +347,7 @@ const AddNewOrder = ({ onClick }) => {
             </div>
             <div className="">
               <div className="w-full py-3 px-6 md:px-4 mb-4">
-                <OrderDetailsForm />
+                <OrderDetailsFormUp />
               </div>
               <div className="w-full">
                 <div className="py-5 px-6 md:px-4 max-h-full grid grid-cols-4 gap-4">
@@ -337,7 +362,7 @@ const AddNewOrder = ({ onClick }) => {
                     <FormBtn
                       disabled={loading}
                       loading={loading}
-                      onClick={placeOrder}
+                      onClick={placeOrder3}
                       title="Submit"
                       className="bg-blue-400 hover:bg-blue-500 hover:shadow-lg text-white transition-all duration-300 w-full"
                     />

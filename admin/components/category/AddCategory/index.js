@@ -11,7 +11,7 @@ import { selectTempUrl, updateTempImgUrl } from "@/app/redux/slices/tempImgUrl";
 import { notifications } from "@mantine/notifications";
 
 const validationSchema = Yup.object().shape({
-  category_image: Yup.string().label("Category Image"),
+  // category_image: Yup.string().label("Category Image"),
   category_title: Yup.string().required().label("Category Title"),
   category_child: Yup.string().required().label("Child Category"),
   category_path: Yup.string().required().label("Category Path"),
@@ -57,7 +57,6 @@ const AddCategory = ({ onClick }) => {
       <div>
         <AppForm
           initialValues={ {
-            category_image: "",
             category_title: "",
             category_child: "",
             category_path: "",

@@ -2,11 +2,13 @@ import { updateAddId } from "@/app/redux/slices/filterId";
 import { useFormikContext, getIn } from "formik";
 import { useEffect, useMemo, useState } from "react";
 import { useDispatch } from "react-redux";
-import styles from "./FormDropdown.module.css";
+import styles from "./FormDropdownOpt.module.css";
 import { ScrollArea, Collapse } from "@mantine/core";
 import Image from "next/image";
 
-function FormDropdown({
+
+
+function FormDropdownOpt({
   items = [],
   name,
   placeholder,
@@ -30,13 +32,14 @@ function FormDropdown({
 
   const normalized = useMemo(() => {
     // Support primitives or objects
-    return (Array.isArray(items) ? items : []).map((it) => {
-      if (it && typeof it === "object") {
+    return (Array.isArray(items) ? items : []).map((it, index) => {
+        if (it && typeof it === "object") {
+          console.log(it, index);
         return {
-          _key: it[keyField],
-          _value: it[valueField],
-          _label: it[labelField] ?? String(it[valueField] ?? ""),
-          _raw: it,
+          _key: it.value,
+          _value: it.value,
+          _label: it.value ?? String(it.value ?? ""),
+          _raw: it.value,
         };
       }
       return { _key: String(it), _value: it, _label: String(it), _raw: it };
@@ -44,41 +47,22 @@ function FormDropdown({
   }, [items, keyField, valueField, labelField]);
 
   const selectedLabel = useMemo(() => {
-    const found = normalized.find((x) => x._value == selected);
+    const found = normalized.find((x) => x._value === selected);
     return found ? found._label : "";
   }, [normalized, selected]);
 
+  console.log(normalized);
+
   const toggleDropdown = () => setOpen((s) => !s);
 
-  const handleItemClick = (item) => {
-    // optional Redux side-effects (kept from your original)
-    switch (name) {
-      case "state":
-        dispatch(updateAddId({ name: "division", id: item._value }));
-        break;
-      case "city":
-        dispatch(updateAddId({ name: "city", id: item._value }));
-        break;
-      case "upazila":
-        dispatch(updateAddId({ name: "upazila", id: item._value }));
-        break;
-      default:
-        dispatch(updateAddId([]));
-    }
 
-    setFieldTouched(name, true);
-    setSelected(item._value);
-    setFieldValue(name, item._value);
-    setOpen(false);
-    onSelect?.(item._raw);
-  };
 
   const error = getIn(errors, name);
   const isTouched = getIn(touched, name);
 
   return (
     <>
-      <div className={`${styles.formDropdown} mb-5`}>
+      <div className={`${styles.formDropdown} mt-2 mb-5`}>
         <div className={`${styles.dropdown} relative`}>
           <div className={styles.dropdown_header} onClick={toggleDropdown}>
             {selected ? selectedLabel : placeholder}
@@ -103,12 +87,12 @@ function FormDropdown({
                     <div
                       key={it._key}
                       className="justify-between py-2 pl-4 transition-colors duration-150 hover:bg-gray-100 text-gray-500 hover:text-green-500 cursor-pointer"
-                      onClick={() => handleItemClick(it)}
+                      
                       id={String(it._key)}
                     >
                       <span
                         className={`${styles.dropdown_item_dot} ${
-                          it._value === selected && styles.selected
+                          it._label === selected && styles.selected
                         }`}
                       >
                         •{" "}
@@ -131,4 +115,4 @@ function FormDropdown({
   );
 }
 
-export default FormDropdown;
+export default FormDropdownOpt;

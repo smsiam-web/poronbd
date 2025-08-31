@@ -19,7 +19,7 @@ const OrderDetails = ({ onClick, item }) => {
   const [singleOrder, setSingleOrder] = useState(item || null);
 
   useEffect(() => {
-    db.collection("placeOrder")
+    db.collection("orders")
       .doc(id)
       .get()
       .then((doc) => {
@@ -36,7 +36,7 @@ const OrderDetails = ({ onClick, item }) => {
       height: 80,
     },
   });
-  // console.log(singleOrder);
+  console.log(singleOrder);
 
   return (
     <div className="">
@@ -127,7 +127,7 @@ const OrderDetails = ({ onClick, item }) => {
                   id="phone"
                   className="font-medium text-sm sm:text-lg md:text-xl xl:text-2xl font-mono"
                 >
-                  {singleOrder?.customer_details.phone_number}
+                  {singleOrder?.customer?.phone}
                 </span>
               </div>
               <div className="">
@@ -138,7 +138,7 @@ const OrderDetails = ({ onClick, item }) => {
                   id="address"
                   className="text-sm sm:text-xl md:text-2xl font-medium max-w-xl overflow-hidden"
                 >
-                  {singleOrder?.customer_details.customer_address}
+                  {singleOrder?.shipping_address?.street}
                 </span>
               </div>
             </div>
@@ -155,7 +155,7 @@ const OrderDetails = ({ onClick, item }) => {
                   </div>
                   <div className="flex justify-between w-7/12">
                     <span className="text-sm sm:text-lg text-title font-mono font-semibold">
-                      Weight.
+                      QTY.
                     </span>
                     <span className="text-sm sm:text-lg text-title font-mono font-semibold">
                       Price.
@@ -167,7 +167,7 @@ const OrderDetails = ({ onClick, item }) => {
                 </div>
               </div>
               {singleOrder &&
-                singleOrder.order.map((item, i) => (
+                singleOrder?.items.map((item, i) => (
                   <div key={i}>
                     <div className="flex justify-between py-1 md:py-2 border-b sm:border-b-2">
                       <div>
@@ -183,7 +183,7 @@ const OrderDetails = ({ onClick, item }) => {
                           className="text-sm sm:text-lg md:text-xl text-title font-mono"
                           id={`item_0${i}_quantity`}
                         >
-                          {item.quantity}kg
+                          {item.quantity}
                         </span>
                         <span
                           className="text-sm sm:text-lg md:text-xl text-title font-mono"
@@ -195,7 +195,7 @@ const OrderDetails = ({ onClick, item }) => {
                           className="text-sm sm:text-lg md:text-xl text-title font-mono"
                           id={`item_0${i}_total_price`}
                         >
-                          {item.total_price}/-
+                          {item.line_total}/-
                         </span>
                       </div>
                     </div>
@@ -222,26 +222,19 @@ const OrderDetails = ({ onClick, item }) => {
                   id="subTotal"
                   className="text-sm sm:text-xl md:text-2xl text-title font-mono"
                 >
-                  {singleOrder?.totalPrice}/-
+                  {singleOrder?.totals?.items}/-
                 </h1>
               </div>
               <div className="flex w-full px-4 py-1 justify-between">
                 <h1 className="text-sm sm:text-xl md:text-2xl font-mono font-medium">
                   Delivery:{" "}
                 </h1>
-                <h1
-                  id="shipping_type"
-                  className="text-sm sm:text-lg md:text-xl text-title font-mono"
-                >
-                  {singleOrder?.customer_details?.delivery_type
-                    ? "HOME"
-                    : "POINT"}
-                </h1>
+                
                 <h1
                   id="shipping_cost"
                   className="text-sm sm:text-xl md:text-2xl text-title font-mono"
                 >
-                  {singleOrder?.deliveryCrg ? singleOrder?.deliveryCrg : "150"}
+                  {singleOrder?.totals?.shipping}
                   /-
                 </h1>
               </div>
@@ -253,7 +246,7 @@ const OrderDetails = ({ onClick, item }) => {
                   id="discount"
                   className="text-sm sm:text-xl md:text-2xl text-title font-mono"
                 >
-                  -{singleOrder?.discount}/-
+                  -{singleOrder?.totals?.discount}/-
                 </h1>
               </div>
               <div className="flex w-full px-4 py-1 justify-between mt-2 rounded-sm bg-blue-200 ">
@@ -264,7 +257,7 @@ const OrderDetails = ({ onClick, item }) => {
                   id="total"
                   className="text-sm sm:text-xl md:text-2xl font-bold text-blue-600 font-mono"
                 >
-                  {singleOrder?.customer_details?.salePrice}.00/-
+                  {singleOrder?.totals?.grand}.00/-
                 </h1>
               </div>
             </div>
@@ -281,18 +274,11 @@ const OrderDetails = ({ onClick, item }) => {
           />
         </div>
 
-        <Link href={"/place-order/add-jannatfashon"}>
+        <Link href={"/place-order/add-new"}>
           <Button
             icon={<IoMdAdd size={26} />}
-            title="Add JF"
+            title="Add Order"
             className="bg-black font-medium hover:shadow-lg transition-all duration-300 text-white w-full h-14 text-md sm:text-lg "
-          />
-        </Link>
-        <Link href={"/place-order/add-mango"}>
-          <Button
-            icon={<IoMdAdd size={26} />}
-            title="Add Mango"
-            className="bg-green-500 font-medium hover:shadow-lg transition-all duration-300 text-white w-full h-14 text-md sm:text-lg "
           />
         </Link>
       </div>

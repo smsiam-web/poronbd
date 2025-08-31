@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FieldArray, useFormikContext, getIn } from "formik";
 import { AppTextArea, FormDropdown, FormInput } from "../../shared/Form";
-import { PCATEGORY, CCATEGORY, TCATEGORY } from "@/admin/configs";
+import { PCATEGORY, CCATEGORY, TCATEGORY, CATEGORY } from "@/admin/configs";
 
 const STATUS_ITEMS = [
   { name: "Draft", id: "draft" },
@@ -139,7 +139,7 @@ const ProductDetailsFormUp = (edit) => {
         <FormDropdown
           name="categories[0].id"
           placeholder="Select parent category"
-          items={PCATEGORY}
+          items={CATEGORY}
         />
       </div>
       <div>
