@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 import "./fonts/lialinurBanglaFont";
 import "./fonts/LiAnis-normal";
 import "./fonts/SolaimanLipi-normal";
-import BarcodeComponent from "./BarcodeImage";
+import { format } from "date-fns";
 import { timestamp } from "@/app/utils/firebase";
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 
@@ -42,6 +42,15 @@ const formatDate = (date) => {
   }
   date = `${mm} ${dd}, ${yyyy}`;
   return date;
+};
+
+export const formatDates = (isoDate) => {
+  if (!isoDate) return ""; // or return null, or "N/A"
+  try {
+    return format(new Date(isoDate), "MMM dd, yyyy");
+  } catch {
+    return "MMM dd, yyyy"; // fallback if invalid date string
+  }
 };
 
 export const Last7Days = () => {

@@ -83,199 +83,147 @@ const AddNewOrder = ({ onClick }) => {
 
   const getCustomer = useSelector(selectSingleCustomer);
 
-    // Submit handler
-      const placeOrder = async (values) => {
-       console.log("p3", values);
-             // Normalize & validate with Yup
-         const normalized = normalizeOrder(values);
-         await orderValidationSchemaCOD.validate(normalized, {
-           abortEarly: false,
-         });
-          console.log( normalized);
-       const counterRef = db.collection("counters").doc("JFOrderCounter");
-   
-       db.runTransaction(async (transaction) => {
-         const counterDoc = await transaction.get(counterRef);
-   
-         // If the document doesn’t exist, set it up with an initial value
-         if (!counterDoc.exists) {
-           transaction.set(counterRef, { value: 1 }); // Initialize with 1
-           return 1;
-         } else {
-           // Increment the existing value by 1
-           transaction.update(counterRef, {
-             value: firebase.firestore.FieldValue.increment(1),
-           });
-           return counterDoc.data().value + 1; // Return new value after increment
-         }
-       })
-         .then(async (newOrderId) => {
-           const orderID = `PR0${newOrderId}`;
-           const customer_id = `PRC0${newOrderId}`;
-   
-           const orderPayload = {
-             store_id: `${normalized?.items[0]?.store_id}`,
-             merchant_order_id: `${orderID}`,
-             recipient_name: `${normalized?.customer?.name}`,
-             recipient_phone: `${normalized?.customer?.phone}`,
-             recipient_address: `${normalized?.shipping_address?.street}`,
-             // recipient_city: 1,
-             // recipient_zone: 10,
-             // recipient_area: 101,
-             delivery_type: 48,
-             item_type: 2,
-             special_instruction: `${normalized?.notes}`,
-             item_quantity: 1,
-             item_weight: "1",
-             item_description: "",
-             amount_to_collect: `${normalized?.totals?.grand}`,
-           };
-   
-           try {
-      
-             const response = await fetch("/api/pathao/place-order", {
-               method: "POST",
-               headers: { "Content-Type": "application/json" },
-               body: JSON.stringify(orderPayload),
-             });
-             const result = await response.json();
-             const orderData = {
-               ...normalized,
-               orderID,
-             };
-             // console.log(orderData);
-             try {
-                await db.collection("orders").doc(orderID).set(orderData);
-               // order ডক পড়ুন যাতে timestamp মিলে যায়
-                updateCounters(orderData);
-        
-             } catch (error) {
-               notifications.show({
-                 title: "Failed to place order",
-                 message: `Please try again later..`,
-                 color: "orange",
-                 autoClose: 5000,
-               });
-   
-              //  setOrderResponse(null);
-               console.error("Error placing order:", error);
-             } finally {
-               // setOrderResponse(null);
-               // dispatch(updateSingleCustomer(null));
-               router.push("/place-order/id=" + orderID);
-               // createCustomer(values, customer_id, timestamp);
-             // sendConfirmationMsg(values, customer_id, timestamp);
-   
-             }
-   
-             if (!response.ok) {
-               const errorText = await response.text();
-               throw new Error(`Server error: ${errorText}`);
-             }
-             if (result.type === "success" && result.code === 200) {
-               notifications.show({
-                 title: "Success",
-                 message: `Order placed successfully. Consignment ID: ${result.data.consignment_id}`,
-                 color: "blue",
-                 autoClose: 7000,
-               });
-             } else {
-               notifications.show({
-                 title: "Error",
-                 message: result.message || "Failed to place order.",
-                 color: "red",
-                 autoClose: 7000,
-               });
-             }
-           } catch (error) {
-             console.error("Transaction failed:", error);
-           }
-         })
-         .catch((error) => {
-           notifications.show({
-             title: "Something went wrong!!!",
-             message: `Please try again later..`,
-             color: "orange",
-             autoClose: 7000,
-           });
-           // setOrderResponse(null);
-           setLoading(false);
-           console.error("Transaction failed:", error);
-         });
-     };
-
-
   // Submit handler
-  
-  const placeOrder2 = async (rawValues) => {
-    console.log(rawValues);
-    try {
-      setLoading(true);
+  const placeOrder = async (values) => {
+    console.log("p3", values);
+    // Normalize & validate with Yup
+    const normalized = normalizeOrder(values);
+    await orderValidationSchemaCOD.validate(normalized, {
+      abortEarly: false,
+    });
+    console.log(normalized);
+    const counterRef = db.collection("counters").doc("JFOrderCounter");
 
-      // Normalize & validate with Yup
-      const normalized = normalizeOrder(rawValues);
-      await orderValidationSchemaCOD.validate(normalized, {
-        abortEarly: false,
-      });
+    db.runTransaction(async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
 
-      const counterRef = db.collection("counters").doc("JFOrderCounter");
+      // If the document doesn’t exist, set it up with an initial value
+      if (!counterDoc.exists) {
+        transaction.set(counterRef, { value: 1 }); // Initialize with 1
+        return 1;
+      } else {
+        // Increment the existing value by 1
+        transaction.update(counterRef, {
+          value: firebase.firestore.FieldValue.increment(1),
+        });
+        return counterDoc.data().value + 1; // Return new value after increment
+      }
+    })
+      .then(async (newOrderId) => {
+        const orderID = `PR0${newOrderId}`;
+        const customer_id = `PRC0${newOrderId}`;
 
-      db.runTransaction(async (transaction) => {
-        const counterDoc = await transaction.get(counterRef);
+        const orderPayload = {
+          store_id: `${normalized?.items[0]?.store_id}`,
+          merchant_order_id: `${orderID}`,
+          recipient_name: `${normalized?.customer?.name}`,
+          recipient_phone: `${normalized?.customer?.phone}`,
+          recipient_address: `${normalized?.shipping_address?.street}`,
+          // recipient_city: 1,
+          // recipient_zone: 10,
+          // recipient_area: 101,
+          delivery_type: 48,
+          item_type: 2,
+          special_instruction: `${normalized?.notes}`,
+          item_quantity: 1,
+          item_weight: "1",
+          item_description: "",
+          amount_to_collect: `${normalized?.totals?.grand}`,
+        };
 
-        // If the document doesn’t exist, set it up with an initial value
-        if (!counterDoc.exists) {
-          transaction.set(counterRef, { value: 1 }); // Initialize with 1
-          return 1;
-        } else {
-          // Increment the existing value by 1
-          transaction.update(counterRef, {
-            value: firebase.firestore.FieldValue.increment(1),
+        try {
+          const response = await fetch("/api/pathao/place-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(orderPayload),
           });
-          return counterDoc.data().value + 1; // Return new value after increment
+          const result = await response.json();
+          const orderData = {
+            ...normalized,
+            fulfillment: { ...normalized?.fulfillment, ...result?.data },
+            orderID,
+            created_user: user?.name || "admin",
+          };
+          // console.log(orderData);
+          try {
+            await db.collection("orders").doc(orderID).set(orderData);
+            // order ডক পড়ুন যাতে timestamp মিলে যায়
+            updateCounters(orderData);
+          } catch (error) {
+            notifications.show({
+              title: "Failed to place order",
+              message: `Please try again later..`,
+              color: "orange",
+              autoClose: 5000,
+            });
+
+            //  setOrderResponse(null);
+            console.error("Error placing order:", error);
+          } finally {
+            // setOrderResponse(null);
+            // dispatch(updateSingleCustomer(null));
+            router.push("/place-order/id=" + orderID);
+            createCustomer(values, orderID);
+            // sendConfirmationMsg(values, customer_id, timestamp);
+          }
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${errorText}`);
+          }
+          if (result.type === "success" && result.code === 200) {
+            notifications.show({
+              title: "Success",
+              message: `Order placed successfully. Consignment ID: ${result.data.consignment_id}`,
+              color: "blue",
+              autoClose: 7000,
+            });
+          } else {
+            notifications.show({
+              title: "Error",
+              message: result.message || "Failed to place order.",
+              color: "red",
+              autoClose: 7000,
+            });
+          }
+        } catch (error) {
+          console.error("Transaction failed:", error);
         }
       })
-
-      // Write to Firestore
-      const docRef = await db.collection("orders").add(normalized);
-      await docRef.update({
-        id: docRef.id,
-        updated_at: timestamp,
-      });
-
-      notifications.show({
-        title: "Order placed",
-        message: `Order ${docRef.id} created successfully.`,
-        color: "green",
-      });
-
-      // Optional: clear any selected customer in your store
-      dispatch(updateSingleCustomer(null));
-
-      // Navigate to order page
-      router.push(`/place-order/id=${docRef.id}`);
-    } catch (err) {
-      if (err?.name === "ValidationError") {
-        // Yup validation error formatting
+      .catch((error) => {
         notifications.show({
-          title: "Validation error",
-          message: "Please review the highlighted fields.",
+          title: "Something went wrong!!!",
+          message: `Please try again later..`,
           color: "orange",
+          autoClose: 7000,
         });
-        console.error(
-          "ValidationError details:",
-          err.inner?.map((e) => ({ path: e.path, message: e.message }))
-        );
-      } else {
-        notifications.show({
-          title: "Failed to place order",
-          message: "Please try again.",
-          color: "red",
+        // setOrderResponse(null);
+        setLoading(false);
+        console.error("Transaction failed:", error);
+      });
+  };
+
+  // create Customer on firebase database
+  const createCustomer = async (values, orderID) => {
+    if (!values?.customer.phone) {
+      console.error("Missing phone number");
+      return;
+    }
+
+    try {
+      await db
+        .collection("customers")
+        .doc(values?.customer.phone)
+        .set({
+          customer: { ...values?.customer },
+          shipping_address: { ...values?.shipping_address },
+          items: [orderID],
+          created_at: new Date().toISOString(), // or Firestore serverTimestamp()
+          created_user: user?.name || "admin",
         });
-        console.error("Order create error:", err);
-      }
-    } finally {
-      setLoading(false);
+      console.log("Customer created successfully");
+    } catch (error) {
+      console.error("Error creating customer:", error);
     }
   };
 

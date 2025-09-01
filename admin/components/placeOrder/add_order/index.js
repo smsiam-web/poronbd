@@ -57,13 +57,10 @@ const normalizeOrder = (values) => {
   };
 
   // Totals: keep items sum and grand consistent
-  const itemsSum = v.items.reduce(
-    (s, it) => s + Number(it.line_total || 0),
-    0
-  );
+  const itemsSum = v.items.reduce((s, it) => s + Number(it.line_total || 0), 0);
   const discount = Number(v?.totals?.discount || 0);
   const shipping = Number(v?.totals?.shipping || 0);
-  const grand = +(itemsSum - discount + shipping ).toFixed(2);
+  const grand = +(itemsSum - discount + shipping).toFixed(2);
 
   v.totals = {
     items: +itemsSum.toFixed(2),
@@ -88,126 +85,149 @@ const AddOrder = ({ onClick }) => {
 
   const getCustomer = useSelector(selectSingleCustomer);
 
+  console.log(user);
+
   // Submit handler
-    const placeOrder = async (values) => {
-     console.log("p3", values);
-           // Normalize & validate with Yup
-       const normalized = normalizeOrder(values);
-       await orderValidationSchemaCOD.validate(normalized, {
-         abortEarly: false,
-       });
-        console.log( normalized);
-     const counterRef = db.collection("counters").doc("JFOrderCounter");
- 
-     db.runTransaction(async (transaction) => {
-       const counterDoc = await transaction.get(counterRef);
- 
-       // If the document doesn’t exist, set it up with an initial value
-       if (!counterDoc.exists) {
-         transaction.set(counterRef, { value: 1 }); // Initialize with 1
-         return 1;
-       } else {
-         // Increment the existing value by 1
-         transaction.update(counterRef, {
-           value: firebase.firestore.FieldValue.increment(1),
-         });
-         return counterDoc.data().value + 1; // Return new value after increment
-       }
-     })
-       .then(async (newOrderId) => {
-         const orderID = `PR0${newOrderId}`;
-         const customer_id = `PRC0${newOrderId}`;
- 
-         const orderPayload = {
-           store_id: `${normalized?.items[0]?.store_id}`,
-           merchant_order_id: `${orderID}`,
-           recipient_name: `${normalized?.customer?.name}`,
-           recipient_phone: `${normalized?.customer?.phone}`,
-           recipient_address: `${normalized?.shipping_address?.street}`,
-           // recipient_city: 1,
-           // recipient_zone: 10,
-           // recipient_area: 101,
-           delivery_type: 48,
-           item_type: 2,
-           special_instruction: `${normalized?.notes}`,
-           item_quantity: 1,
-           item_weight: "1",
-           item_description: "",
-           amount_to_collect: `${normalized?.totals?.grand}`,
-         };
- 
-         try {
-    
-           const response = await fetch("/api/pathao/place-order", {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify(orderPayload),
-           });
-           const result = await response.json();
-           const orderData = {
-             ...normalized,
-             orderID,
-           };
-           // console.log(orderData);
-           try {
-              await db.collection("orders").doc(orderID).set(orderData);
-             // order ডক পড়ুন যাতে timestamp মিলে যায়
-              updateCounters(orderData);
-      
-           } catch (error) {
-             notifications.show({
-               title: "Failed to place order",
-               message: `Please try again later..`,
-               color: "orange",
-               autoClose: 5000,
-             });
- 
+  const placeOrder = async (values) => {
+    console.log("p3", values);
+    // Normalize & validate with Yup
+    const normalized = normalizeOrder(values);
+    await orderValidationSchemaCOD.validate(normalized, {
+      abortEarly: false,
+    });
+    console.log(normalized);
+    const counterRef = db.collection("counters").doc("JFOrderCounter");
+
+    db.runTransaction(async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+
+      // If the document doesn’t exist, set it up with an initial value
+      if (!counterDoc.exists) {
+        transaction.set(counterRef, { value: 1 }); // Initialize with 1
+        return 1;
+      } else {
+        // Increment the existing value by 1
+        transaction.update(counterRef, {
+          value: firebase.firestore.FieldValue.increment(1),
+        });
+        return counterDoc.data().value + 1; // Return new value after increment
+      }
+    })
+      .then(async (newOrderId) => {
+        const orderID = `PR0${newOrderId}`;
+        const customer_id = `PRC0${newOrderId}`;
+
+        const orderPayload = {
+          store_id: `${normalized?.items[0]?.store_id}`,
+          merchant_order_id: `${orderID}`,
+          recipient_name: `${normalized?.customer?.name}`,
+          recipient_phone: `${normalized?.customer?.phone}`,
+          recipient_address: `${normalized?.shipping_address?.street}`,
+          // recipient_city: 1,
+          // recipient_zone: 10,
+          // recipient_area: 101,
+          delivery_type: 48,
+          item_type: 2,
+          special_instruction: `${normalized?.notes}`,
+          item_quantity: 1,
+          item_weight: "1",
+          item_description: "",
+          amount_to_collect: `${normalized?.totals?.grand}`,
+        };
+
+        try {
+          const response = await fetch("/api/pathao/place-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(orderPayload),
+          });
+          const result = await response.json();
+          const orderData = {
+            ...normalized,
+            fulfillment: { ...normalized?.fulfillment, ...result?.data },
+            orderID,
+            created_user: user?.name || "admin",
+          };
+          // console.log(orderData);
+          try {
+            await db.collection("orders").doc(orderID).set(orderData);
+            // order ডক পড়ুন যাতে timestamp মিলে যায়
+            updateCounters(orderData);
+          } catch (error) {
+            notifications.show({
+              title: "Failed to place order",
+              message: `Please try again later..`,
+              color: "orange",
+              autoClose: 5000,
+            });
+
             //  setOrderResponse(null);
-             console.error("Error placing order:", error);
-           } finally {
-             // setOrderResponse(null);
-             // dispatch(updateSingleCustomer(null));
-             router.push("/place-order/id=" + orderID);
-             // createCustomer(values, customer_id, timestamp);
-           // sendConfirmationMsg(values, customer_id, timestamp);
- 
-           }
- 
-           if (!response.ok) {
-             const errorText = await response.text();
-             throw new Error(`Server error: ${errorText}`);
-           }
-           if (result.type === "success" && result.code === 200) {
-             notifications.show({
-               title: "Success",
-               message: `Order placed successfully. Consignment ID: ${result.data.consignment_id}`,
-               color: "blue",
-               autoClose: 7000,
-             });
-           } else {
-             notifications.show({
-               title: "Error",
-               message: result.message || "Failed to place order.",
-               color: "red",
-               autoClose: 7000,
-             });
-           }
-         } catch (error) {
-           console.error("Transaction failed:", error);
-         }
-       })
-       .catch((error) => {
-         notifications.show({
-           title: "Something went wrong!!!",
-           message: `Please try again later..`,
-           color: "orange",
-           autoClose: 7000,
-         });
-         // setOrderResponse(null);
-         setLoading(false);
-         console.error("Transaction failed:", error);
-       });
-   };
+            console.error("Error placing order:", error);
+          } finally {
+            // setOrderResponse(null);
+            // dispatch(updateSingleCustomer(null));
+            router.push("/place-order/id=" + orderID);
+             createCustomer(values, orderID);
+            // sendConfirmationMsg(values, customer_id, timestamp);
+          }
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Server error: ${errorText}`);
+          }
+          if (result.type === "success" && result.code === 200) {
+            notifications.show({
+              title: "Success",
+              message: `Order placed successfully. Consignment ID: ${result.data.consignment_id}`,
+              color: "blue",
+              autoClose: 7000,
+            });
+          } else {
+            notifications.show({
+              title: "Error",
+              message: result.message || "Failed to place order.",
+              color: "red",
+              autoClose: 7000,
+            });
+          }
+        } catch (error) {
+          console.error("Transaction failed:", error);
+        }
+      })
+      .catch((error) => {
+        notifications.show({
+          title: "Something went wrong!!!",
+          message: `Please try again later..`,
+          color: "orange",
+          autoClose: 7000,
+        });
+        // setOrderResponse(null);
+        setLoading(false);
+        console.error("Transaction failed:", error);
+      });
+  };
+    // create Customer on firebase database
+    const createCustomer = async (values, orderID) => {
+      if (!values?.phone_number) {
+        console.error("Missing phone number");
+        return;
+      }
+  
+      try {
+        await db
+          .collection("customers")
+          .doc(values?.customer.phone)
+          .set({
+            customer: { ...values?.customer },
+            shipping_address: { ...values?.shipping_address },
+            items: [orderID],
+            created_at: new Date().toISOString(), // or Firestore serverTimestamp()
+          });
+        console.log("Customer created successfully");
+      } catch (error) {
+        console.error("Error creating customer:", error);
+      }
+    };
 
   return (
     <main>
@@ -215,10 +235,8 @@ const AddOrder = ({ onClick }) => {
         <AppForm
           initialValues={{
             // --- Basics ---
-            id: "",
             status: "pending",
             currency: "BDT",
-            store_id: "",
 
             // --- Customer ---
             customer: {
@@ -227,7 +245,7 @@ const AddOrder = ({ onClick }) => {
             },
 
             // --- Addresses ---
-            shipping_address: {      
+            shipping_address: {
               street: "",
               city: "",
               state: "",
@@ -242,7 +260,7 @@ const AddOrder = ({ onClick }) => {
             },
             fulfillment: {
               status: "unfulfilled",
-              carrier: "",
+              courier: "Pathao",
               tracking_numbers: [],
             },
 
@@ -254,7 +272,7 @@ const AddOrder = ({ onClick }) => {
             totals: {
               items: 0,
               discount: 0,
-              shipping: 0,          
+              shipping: 0,
               grand: 0,
             },
 

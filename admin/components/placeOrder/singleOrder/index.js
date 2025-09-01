@@ -9,6 +9,7 @@ import Button from "../../shared/Button";
 import { AiOutlinePrinter } from "react-icons/ai";
 import { IoMdAdd } from "react-icons/io";
 import Link from "next/link";
+import { formatDates } from "@/admin/utils/helpers";
 
 const GeneratePDF = dynamic(() => import("../../../utils/GeneratePDF"), {
   ssr: false,
@@ -76,7 +77,7 @@ const OrderDetails = ({ onClick, item }) => {
                     id="status"
                     className="text-sm  md:text-xl capitalize font-mono"
                   >
-                    {singleOrder?.date}.
+                    {formatDates(singleOrder?.created_at)}.
                   </span>
                 </div>
                 <div>
@@ -87,7 +88,7 @@ const OrderDetails = ({ onClick, item }) => {
                     id="status"
                     className=" text-sm  md:text-xl  capitalize font-mono"
                   >
-                    {singleOrder?.customer_details?.received_by}.
+                    {singleOrder?.created_user}.
                   </span>
                 </div>
                 <div>

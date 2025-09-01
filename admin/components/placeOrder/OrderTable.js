@@ -15,6 +15,7 @@ import NotFound from "../shared/NotFound";
 import { AiOutlinePrinter } from "react-icons/ai";
 import { selectUser } from "@/app/redux/slices/authSlice";
 import {
+  formatDates,
   generateStick,
   invoiceGenerate,
   updateOrderStatus,
@@ -115,8 +116,8 @@ const OrderTable = () => {
   useEffect(() => {
     setLoading(true);
     const unSub = db
-      .collection("placeOrder")
-      .orderBy("timestamp", "desc")
+      .collection("orders")
+      .orderBy("created_at", "desc")
       .limit(30)
       .onSnapshot((snap) => {
         const order = [];
@@ -124,9 +125,9 @@ const OrderTable = () => {
           order.push({
             id: doc.id,
             ...doc.data(),
-            // timestamp: doc.data().timestamp?.toDate().getTime(),
           });
         });
+        console.log(order);
         dispatch(updateOrder(order));
         setLoading(false);
       });
@@ -134,6 +135,8 @@ const OrderTable = () => {
       unSub();
     };
   }, []);
+
+
 
   //get config
   useEffect(() => {
@@ -240,11 +243,8 @@ const OrderTable = () => {
                   <th className="px-4 py-3 ">consignment</th>
                   <th className="px-4 py-3 ">NAME</th>
                   <th className="px-4 py-3 ">Phone no.</th>
-                  <th className="px-4 py-3 ">Delivery Type</th>
                   <th className="px-4 py-3 ">DISCOUNT</th>
                   <th className="px-4 py-3 ">Amount</th>
-                  <th className="px-4 py-3 ">WGT</th>
-
                   <th className="px-4 py-3 text-center ">status</th>
                   <th
                     className={`px-4 py-3 ${
@@ -283,32 +283,28 @@ const OrderTable = () => {
                             key={index}
                           >
                             <td className="px-4 py-3 font-bold">
-                              {/* <Link href={`/place-order/id=${item.id}`}> */}
+                              <Link href={`/place-order/id=${item.id}`}>
                               <span className="text-sm">#{item.id}</span>
-                              {/* </Link> */}
+                              </Link>
                             </td>
                             <td className="px-4 py-3 font-bold">
                               {/* <Link href={`/place-order/id=${item.id}`}> */}
                               <span className="text-sm">
-                                {item?.customer_details?.courier
-                                  ? item?.customer_details?.courier
-                                  : "null"}
+                                {item?.fulfillment?.courier || "null"}
                               </span>
                               {/* </Link> */}
                             </td>
                             <td className="px-4 py-3 font-bold">
-                              {/* <Link href={`/place-order/id=${item.id}`}> */}
+                              <Link href={`https://merchant.pathao.com/courier/orders/${item?.fulfillment?.consignment_id}`} target="_blank" rel="noopener noreferrer">
                               <span className="text-sm">
-                                {item?.courier?.consignment_id
-                                  ? item?.courier?.consignment_id
-                                  : "null"}
+                                {item?.fulfillment?.consignment_id || "null"}
                               </span>
-                              {/* </Link> */}
+                              </Link>
                             </td>
 
                             <td className="px-4 py-3">
                               <span className="text-sm ">
-                                {item.customer_details?.customer_name}
+                                {item.customer?.name}
                               </span>
                             </td>
 
@@ -317,39 +313,22 @@ const OrderTable = () => {
                                 <a
                                   href={`tel:+88${item.customer_details?.phone_number}`}
                                 >
-                                  {item.customer_details?.phone_number}
+                                  {item.customer?.phone}
                                 </a>
                               </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`${
-                                  item?.customer_details?.delivery_type
-                                    ? "bg-green-100 text-green-400"
-                                    : "bg-slate-200 text-slate-500"
-                                } text-xs uppercase font-serif font-medium px-2 py-1 rounded-full`}
-                              >
-                                {item?.customer_details?.delivery_type
-                                  ? "HOME"
-                                  : "POINT"}
-                              </span>
-                            </td>
+                            </td>        
                             <td className="px-4 py-3">
                               <span className="text-sm font-bold">
-                                -{item?.discount}tk
+                                -{item?.totals?.discount}tk
                               </span>
                             </td>
 
                             <td className="px-4 py-3">
                               <span className="text-sm  font-bold">
-                                {item.customer_details?.salePrice}tk
+                                {item?.totals?.grand}tk
                               </span>
                             </td>
-                            <td className="px-4 py-3">
-                              <span className="text-sm  font-semibold">
-                                {item.weight}Kg
-                              </span>
-                            </td>
+                            
 
                             <td className="px-4 py-3">
                               <span className="font-serif">
@@ -443,18 +422,18 @@ const OrderTable = () => {
                                     "text-orange-500 bg-orange-100"
                                   }  inline-flex px-2 text-xs capitalize font-medium leading-5 rounded-full`}
                                 >
-                                  {item.customer_details?.order_from || "null"}
+                                  {item.meta?.source || "null"}
                                 </span>
                               </span>
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm font-semibold">
-                                {item.date}
+                                {formatDates(item?.created_at)}
                               </span>
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm font-semibold">
-                                {item.placeBy?.user || item?.placeBy}
+                                {item?.created_user || "null"}
                               </span>
                             </td>
                             <td className="px-4 py-3">

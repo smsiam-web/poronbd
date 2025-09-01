@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FieldArray, useFormikContext, getIn } from "formik";
 import { AppTextArea, FormDropdown, FormInput } from "../../shared/Form";
 import ProductSearchAddWithCreate from "./ProductSearchAdd";
-
+import { db } from "@/app/utils/firebase";
 
 /**
  * Order Details Form (Formik child component)
@@ -23,9 +23,7 @@ const PAYMENT_METHODS = [
   { name: "Cash on Delivery (COD)", id: "cod" },
   { name: "Bkash", id: "bkash" },
   { name: "Nagad", id: "nagad" },
-  { name: "Card", id: "card" },
-  { name: "Stripe", id: "stripe" },
-  { name: "PayPal", id: "paypal" },
+  { name: "Rocket", id: "rocket" },
 ];
 
 const PAYMENT_STATUS = [
@@ -53,16 +51,16 @@ const CURRENCY = [
   { name: "EUR", id: "EUR" },
 ];
 
-  const COURIER = [
-    {
-      name: "Pathao",
-      id: "Pathao",
-    },
-    {
-      name: "SteadFast",
-      id: "SteadFast",
-    },
-  ];
+const COURIER = [
+  {
+    name: "Pathao",
+    id: "Pathao",
+  },
+  {
+    name: "SteadFast",
+    id: "SteadFast",
+  },
+];
 
 // --- Helpers ---
 function toNumber(n, fallback = 0) {
@@ -72,6 +70,7 @@ function toNumber(n, fallback = 0) {
 
 function useTotalsAutoCompute() {
   const { values, setFieldValue } = useFormikContext();
+  console.log(values);
 
   const itemsSum = useMemo(() => {
     const items = getIn(values, "items") || [];
@@ -93,8 +92,127 @@ function useTotalsAutoCompute() {
     setFieldValue("totals.items", +itemsSum.toFixed(2), false);
     setFieldValue("totals.grand", grand, false);
   }, [itemsSum, values, setFieldValue]);
-}
 
+  //  useEffect(() => {
+  //   const phoneRaw = getIn(values, "customer.phone");
+  //   // keep leading 0s, strip non-digits
+  //   const phone = String(phoneRaw ?? "").replace(/\D/g, "");
+
+  //   if (phone.length !== 11) return;
+
+  //   // debounce to avoid many reads while typing
+  //   const timer = setTimeout(() => {
+  //     db.collection("customers").doc(phone).get()
+  //       .then((snap) => {
+  //         const setIfDiff = (path, val) => {
+  //           const cur = getIn(values, path);
+  //           if (cur !== val) setFieldValue(path, val, false);
+  //         };
+
+  //         if (!snap.exists) {
+  //           // ❌ no data found → clear form fields
+  //           setIfDiff("customer.phone", phone);
+  //           setIfDiff("customer.name", "");
+  //           setIfDiff("shipping_address.city", "");
+  //           setIfDiff("shipping_address.state", "");
+  //           setIfDiff("shipping_address.country", "");
+  //           setIfDiff("shipping_address.street", "");
+  //           return;
+  //         }
+
+  //         // ✅ data found → fill form
+  //         const data = snap.data();
+  //         setIfDiff("customer.phone", data?.customer?.phone ?? phone);
+  //         setIfDiff("customer.name", data?.customer?.name ?? "");
+  //         setIfDiff("shipping_address.city", data?.shipping_address?.city ?? "");
+  //         setIfDiff("shipping_address.state", data?.shipping_address?.state ?? "");
+  //         setIfDiff("shipping_address.country", data?.shipping_address?.country ?? "");
+  //         setIfDiff("shipping_address.street", data?.shipping_address?.street ?? "");
+  //       })
+  //       .catch((err) => console.error("Failed to load customer:", err));
+  //   }, 300);
+
+  //   return () => clearTimeout(timer);
+  //   // depend on the phone string only + setter
+  // }, [values]);
+}
+const Line = ({ h = "h-4", w = "w-full" }) => (
+  <div className={`rounded bg-gray-200 ${h} ${w}`}></div>
+);
+
+const SectionSkeleton = () => (
+  <div className="animate-pulse space-y-3">
+    <Line h="h-4" w="w-32" />
+    <div className="grid grid-cols-2 gap-3">
+      <Line />
+      <Line />
+      <Line />
+      <Line />
+    </div>
+  </div>
+);
+
+function useCustomerAutofill() {
+  const { values, setFieldValue } = useFormikContext();
+  const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
+
+  useEffect(() => {
+    const phoneRaw = getIn(values, "customer.phone");
+    const phone = String(phoneRaw ?? "").replace(/\D/g, "");
+    if (phone.length !== 11) return;
+
+    const timer = setTimeout(() => {
+      setIsLoadingCustomer(true);
+
+      db.collection("customers")
+        .doc(phone)
+        .get()
+        .then((snap) => {
+          const setIfDiff = (path, val) => {
+            const cur = getIn(values, path);
+            if (cur !== val) setFieldValue(path, val, false);
+          };
+
+          if (!snap.exists) {
+            // no data → clear fields but keep typed phone
+            setIfDiff("customer.phone", phone);
+            setIfDiff("customer.name", "");
+            setIfDiff("shipping_address.city", "");
+            setIfDiff("shipping_address.state", "");
+            setIfDiff("shipping_address.country", "");
+            setIfDiff("shipping_address.street", "");
+            return;
+          }
+
+          const data = snap.data();
+          setIfDiff("customer.phone", data?.customer?.phone ?? phone);
+          setIfDiff("customer.name", data?.customer?.name ?? "");
+          setIfDiff(
+            "shipping_address.city",
+            data?.shipping_address?.city ?? ""
+          );
+          setIfDiff(
+            "shipping_address.state",
+            data?.shipping_address?.state ?? ""
+          );
+          setIfDiff(
+            "shipping_address.country",
+            data?.shipping_address?.country ?? ""
+          );
+          setIfDiff(
+            "shipping_address.street",
+            data?.shipping_address?.street ?? ""
+          );
+        })
+        .catch((err) => console.error("Failed to load customer:", err))
+        .finally(() => setIsLoadingCustomer(false));
+    }, 300); // debounce
+    setIsLoadingCustomer(false);
+    return () => clearTimeout(timer);
+  }, [values, setFieldValue]);
+
+  return { isLoadingCustomer };
+}
 function useLineTotalsAutoCompute(index) {
   const { values, setFieldValue } = useFormikContext();
   const price = toNumber(getIn(values, `items[${index}].price`), 0);
@@ -121,6 +239,9 @@ const OrderDetailsFormUp = () => {
   // keep totals consistent with items, discount, shipping, tax
   useTotalsAutoCompute();
 
+  // 🔹 our new hook: gives us loading flag while fetching customer doc
+  const { isLoadingCustomer } = useCustomerAutofill();
+
   return (
     <div className="max-h-full space-y-4">
       {/* BASICS */}
@@ -146,11 +267,28 @@ const OrderDetailsFormUp = () => {
         </div>
       </div>
 
-      {/* CUSTOMER */}
-      <div className=" p-3 border rounded space-y-3">
+      {/* CUSTOMER (with overlay) */}
+      <div className="relative p-3 border rounded space-y-3">
         <SectionTitle>Customer</SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 sm:col-span-1">
+
+        {/* Overlay while loading */}
+        {isLoadingCustomer && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10">
+            <div className="w-full px-2">
+              <SectionSkeleton />
+            </div>
+          </div>
+        )}
+
+        {/* Fields (still rendered; overlay blocks interaction) */}
+        <div
+          className={`grid grid-cols-2 gap-3 ${
+            isLoadingCustomer
+              ? "pointer-events-none select-none opacity-60"
+              : ""
+          }`}
+        >
+          <div className="col-span-2 sm:col-span-1">
             <span>Phone</span>
             <FormInput name="customer.phone" placeholder="01XXXXXXXXX" />
           </div>
@@ -158,7 +296,6 @@ const OrderDetailsFormUp = () => {
             <span>Name</span>
             <FormInput name="customer.name" placeholder="Mr. Customer" />
           </div>
-          
           <div className="col-span-2 sm:col-span-1">
             <span>Marketing Opt-in</span>
             <FormDropdown
@@ -170,242 +307,31 @@ const OrderDetailsFormUp = () => {
         </div>
       </div>
 
-      {/* ADDRESSES */}
-      <div className="p-3 border rounded space-y-3">
+      {/* ADDRESSES (with overlay) */}
+      <div className="relative p-3 border rounded space-y-3">
         <SectionTitle>Shipping Address</SectionTitle>
-        <AddressFields prefix="shipping_address" />
-      </div>
 
- 
-
-      {/* ITEMS */}
-      <div className="space-y-3 p-3 border rounded">
-        <SectionTitle>Items</SectionTitle>
-        <div className="col-span-6">
-          <ProductSearchAddWithCreate />
-        </div>
-        <FieldArray
-          name="items"
-          render={({ push, remove }) => (
-            <div className="space-y-3">
-              {(getIn(values, "items") || []).map((_, i) => (
-                <ItemRow key={i} index={i} onRemove={() => remove(i)} />
-              ))}
-
-              {/* <button
-                type="button"
-                className="text-sm underline"
-                onClick={() =>
-                  push({
-                    product_id: "",
-                    variant_id: null,
-                    sku: "",
-                    title: "",
-                    slug: "",
-                    unit: "pc",
-                    options: [],
-                    image: null,
-                    price: 0,
-                    compare_at_price: null,
-                    quantity: 1,
-                    currency: getIn(values, "currency") || "BDT",
-                    tax_rate: 0,
-                    line_total: 0,
-                    inventory_allocation: [{ location_code: "MAIN", qty: 0 }],
-                  })
-                }
-              >
-                + Add item
-              </button> */}
+        {isLoadingCustomer && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-10">
+            <div className="w-full px-2">
+              <SectionSkeleton />
             </div>
-          )}
-        />
-      </div>
+          </div>
+        )}
 
-      {/* DISCOUNTS & TOTALS */}
-      <div className="grid grid-cols-2 gap-3 p-3 border rounded">
-        <div className="space-y-2">
-          <SectionTitle>Discounts</SectionTitle>
-          <FieldArray
-            name="discounts"
-            render={({ push, remove }) => (
-              <div className="space-y-2">
-                {(getIn(values, "discounts") || []).map((_, idx) => (
-                  <div key={idx} className="grid grid-cols-5 gap-2 items-end">
-                    <div className="col-span-3">
-                      <span>Code</span>
-                      <FormInput
-                        name={`discounts[${idx}].code`}
-                        placeholder="WELCOME10"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <span>Amount</span>
-                      <FormInput
-                        type="number"
-                        name={`discounts[${idx}].amount`}
-                        placeholder="0.00"
-                      />
-                    </div>
-                    <div className="col-span-5">
-                      <button
-                        type="button"
-                        onClick={() => remove(idx)}
-                        className="text-sm text-red-500"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="text-sm underline"
-                  onClick={() => push({ code: "", amount: 0 })}
-                >
-                  + Add discount
-                </button>
-              </div>
-            )}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <SectionTitle>Totals</SectionTitle>
-          <div>
-            <span>Items Subtotal</span>
-            <FormInput name="totals.items" type="number" readOnly />
-            <Subtle>Auto-calculated from line totals</Subtle>
-          </div>
-          <div>
-            <span>Discount</span>
-            <FormInput
-              name="totals.discount"
-              type="number"
-              placeholder="0.00"
-            />
-          </div>
-          <div>
-            <span>Shipping</span>
-            <FormInput
-              name="totals.shipping"
-              type="number"
-              placeholder="0.00"
-            />
-          </div>
-          <div>
-            <span>Tax</span>
-            <FormInput name="totals.tax" type="number" placeholder="0.00" />
-          </div>
-          <div>
-            <span>Grand Total</span>
-            <FormInput name="totals.grand" type="number" readOnly />
-            <Subtle>items - discount + shipping + tax</Subtle>
-          </div>
+        <div
+          className={`${
+            isLoadingCustomer
+              ? "pointer-events-none select-none opacity-60"
+              : ""
+          }`}
+        >
+          <AddressFields prefix="shipping_address" />
         </div>
       </div>
 
-           {/* PAYMENT & FULFILLMENT */}
-      <div className="grid grid-cols-2 gap-3 p-3 border rounded">
-        <div className="space-y-3">
-          <SectionTitle>Payment</SectionTitle>
-          <div>
-            <span>Method</span>
-            <FormDropdown
-              name="payment.method"
-              placeholder="Select"
-              items={PAYMENT_METHODS}
-            />
-          </div>
-          <div>
-            <span>Status</span>
-            <FormDropdown
-              name="payment.status"
-              placeholder="Select"
-              items={PAYMENT_STATUS}
-            />
-          </div>
-          <div>
-            <span>Transaction ID</span>
-            <FormInput
-              name="payment.transaction_id"
-              placeholder="(if available)"
-            />
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <SectionTitle>Fulfillment</SectionTitle>
-          <div>
-            <span>Status</span>
-            <FormDropdown
-              name="fulfillment.status"
-              placeholder="Select"
-              items={FULFILLMENT_STATUS}
-            />
-          </div>
-
-          <div>
-            <span>Courier</span>
-            <FormDropdown
-              name="fulfillment.courier"
-              placeholder="Select"
-              items={COURIER}
-              defaultValue={"Pathao"}
-            />
-          </div>
-
-          <div>
-            <span>Tracking Numbers</span>
-            <FieldArray
-              name="fulfillment.tracking_numbers"
-              render={({ push, remove }) => (
-                <div className="space-y-2">
-                  {(getIn(values, "fulfillment.tracking_numbers") || []).map(
-                    (_, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <FormInput
-                          name={`fulfillment.tracking_numbers[${idx}]`}
-                          placeholder="TRK..."
-                        />
-                        <button
-                          type="button"
-                          onClick={() => remove(idx)}
-                          className="text-sm text-red-500"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )
-                  )}
-                  <button
-                    type="button"
-                    className="text-sm text-green-600"
-                    onClick={() => push("")}
-                  >
-                    + Add tracking
-                  </button>
-                </div>
-              )}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* META & NOTES */}
-      <div className="p-3 border rounded space-y-3">
-        <SectionTitle>Meta & Notes</SectionTitle>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <span>Source</span>
-            <FormInput name="meta.source" placeholder="web / app / pos" />
-          </div>
-          <div>
-            <span>Notes</span>
-            <AppTextArea name="notes" placeholder="Internal notes" />
-          </div>
-        </div>
-      </div>
+      {/* ... keep the rest of your form unchanged ... */}
+      {/* ITEMS, DISCOUNTS & TOTALS, PAYMENT, FULFILLMENT, META */}
     </div>
   );
 };
@@ -413,21 +339,20 @@ const OrderDetailsFormUp = () => {
 // --- Subcomponents ---
 const AddressFields = ({ prefix }) => {
   return (
-    <div className="grid grid-cols-2 gap-3">
-
-      <div className="col-span-1 sm:col-span-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="col-span-1">
         <span>Street</span>
         <FormInput name={`${prefix}.street`} placeholder="Street, house" />
       </div>
-      <div className="col-span-1 sm:col-span-2">
+      <div className="col-span-1">
         <span>City</span>
         <FormInput name={`${prefix}.city`} placeholder="City" />
       </div>
-      <div className="col-span-1 sm:col-span-2">
+      <div className="col-span-1">
         <span>State / District</span>
         <FormInput name={`${prefix}.state`} placeholder="Dhaka" />
       </div>
-      <div className="col-span-1 sm:col-span-2">
+      <div className="col-span-1">
         <span>Country</span>
         <FormInput
           name={`${prefix}.country`}
@@ -445,9 +370,8 @@ const ItemRow = ({ index, onRemove }) => {
   const { values } = useFormikContext();
 
   return (
-    <div className="grid grid-cols-6 gap-3 p-3 border rounded">        
+    <div className="grid grid-cols-6 gap-3 p-3 border rounded">
       <div className="col-span-6 flex items-center justify-between">
-        
         <div className="font-medium">Item {index + 1}</div>
         <button
           type="button"
@@ -457,7 +381,7 @@ const ItemRow = ({ index, onRemove }) => {
           Remove
         </button>
       </div>
-    
+
       <div className="col-span-3 sm:col-span-2 gap-2">
         <span>Product ID</span>
         <FormInput name={`items[${index}].product_id`} placeholder="1001" />
@@ -509,7 +433,10 @@ const ItemRow = ({ index, onRemove }) => {
           render={({ push, remove }) => (
             <div className="space-y-2">
               {(getIn(values, `items[${index}].options`) || []).map((_, oi) => (
-                <div key={oi} className="grid gird-cols-2 sm:grid-cols-3 gap-2 items-end">
+                <div
+                  key={oi}
+                  className="grid gird-cols-2 sm:grid-cols-3 gap-2 items-end"
+                >
                   <div className="col-span-1">
                     <span>Name</span>
                     <FormInput
@@ -519,7 +446,7 @@ const ItemRow = ({ index, onRemove }) => {
                     />
                   </div>
                   <div className="col-span-1">
-                    <span>Value</span>              
+                    <span>Value</span>
                     <FormDropdown
                       name={`items[${index}].option[${oi}].value`}
                       value={values?.items[index]?.options[oi]?.name}
