@@ -162,7 +162,7 @@ const Auth = () => {
         name: displayName,
         email,
         image: photoURL,
-        timestamp,
+        created_at: new Date().toISOString(),
       });
     }
   };
@@ -203,7 +203,7 @@ const Auth = () => {
         </div>
 
         <div className="text-center col-span-2 md:col-span-1 place-content-center border-none rounded-none">
-          <div className="absolute top-4 right-3">
+          <div className=" absolute top-4 right-3">
             <Button
               title={!isLogin ? "Sign up" : "Login"}
               className={"bg-[#020817] text-white w-full text-sm"}
@@ -231,7 +231,7 @@ const Auth = () => {
                       register
                     </h1>
                   </div>
-                  <h2 className="text-sub-title pt-8 pb-6">
+                  <h2 className="text-sub-title py-4">
                     {isLogin ? "Login to Your Account" : "Create Your Account"}
                   </h2>
 
@@ -259,18 +259,18 @@ const Auth = () => {
                       </div>
                       <div className="mt-6">
                         <FormBtn
-                          title={isLogin ? "Sign In" : "SIGN UP"}
+                          title={isLogin ? "Sign In" : "Sign Up"}
                           onClick={handelLoginSignUP}
                           loading={loading}
                         />
                       </div>
                     </div>
                   </AppForm>
-                  <div className="flex justify-center gap-4 flex-col items-center py-6">
-                    <div className="flex justify-center flex-col border-b-2 w-full pb-4">
+                  <div className="flex justify-center gap-3 flex-col items-center py-6">
+                    <div className="flex justify-center flex-col border-b-2 w-full pb-3">
                       {isLogin ? (
                         <>
-                          <p className="text-center text-sub-title pb-2">
+                          <p className="text-center text-sub-title pb-1">
                             You don&apos;t have any account?
                           </p>
                           <span
@@ -282,7 +282,7 @@ const Auth = () => {
                         </>
                       ) : (
                         <>
-                          <p className="text-center text-sub-title pb-2">
+                          <p className="text-center text-sub-title pb-1">
                             Already have an account?
                           </p>
                           <span
