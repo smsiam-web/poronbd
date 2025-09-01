@@ -85,7 +85,6 @@ const AddNewOrder = ({ onClick }) => {
 
   // Submit handler
   const placeOrder = async (values) => {
-    console.log("p3", values);
     // Normalize & validate with Yup
     const normalized = normalizeOrder(values);
     await orderValidationSchemaCOD.validate(normalized, {
@@ -259,7 +258,7 @@ const AddNewOrder = ({ onClick }) => {
             },
             fulfillment: {
               status: "unfulfilled",
-              carrier: "",
+              courier: "Pathao",
               tracking_numbers: [],
             },
 
