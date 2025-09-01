@@ -8,7 +8,7 @@ const Products = () => {
   return (
     <AdminLayout>
       <Link href={"/place-order"} >
-        <div className="flex max-w-2xl mx-auto items-center justify-start text-sub-title">
+        <div className="md:flex max-w-2xl mx-auto hidden items-center justify-start text-sub-title">
           <BsArrowLeftShort size={22} />
           <span>Back</span>
         </div>

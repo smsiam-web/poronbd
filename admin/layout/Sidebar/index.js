@@ -54,7 +54,7 @@ function Sidebar({ setSidebarActive }) {
             <RxCross1 className={styles.icon} />
           </div>
         </div>
-        <div className={styles.sidebar__items}>
+        <div className={`${styles.sidebar__items}`}>
           {/* <h5>Title</h5> */}
           {menus &&
             menus?.map(({ pathname, Icon, title }) => (

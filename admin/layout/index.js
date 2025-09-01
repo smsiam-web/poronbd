@@ -15,8 +15,8 @@ const AdminWrapper = ({ children }) => {
       <Navbar setSidebarActive={setSidebarActive} />
       <div className={styles.content_wrapper}>
         {sidebarActive && <Sidebar setSidebarActive={setSidebarActive} />}
-        <div className={styles.body_content}>
-          <div className="w-full mx-auto md:p-5 p-3">{children}</div>
+        <div className={`${styles.body_content} md:mx-[20px] md:mt-[20px]`}>
+          <div className="w-full mx-auto md:p-5 p-2 sm:p-3">{children}</div>
         </div>
       </div>
     </div>

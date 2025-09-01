@@ -6,7 +6,7 @@ import Link from "next/link";
 
 function Navbar({ setSidebarActive }) {
   return (
-    <div className={`${styles.container} fixed shadow-md`}>
+    <div className={`${styles.container} fixed shadow-sm`}>
       <div className={styles.wrapper}>
         <div className="flex px-4 py-2 justify-between w-full items-center gap-4">
           <div className="flex items-center gap-2">

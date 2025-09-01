@@ -107,9 +107,9 @@
   -moz-border-radius: 10px;
   -ms-border-radius: 10px;
   -o-border-radius: 10px;
-  margin-right: 20px;
+  /* margin-right: 20px;
   margin-left: 20px;
-  margin-bottom: 20px;
+  margin-bottom: 20px; */
 }
 .content_wrapper {
   display: flex;

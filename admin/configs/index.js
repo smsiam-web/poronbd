@@ -63,12 +63,7 @@ export const menus = [
     title: "Orders",
     secure: true,
   },
-  {
-    pathname: "/coupons",
-    Icon: FiGift,
-    title: "Coupons",
-    secure: true,
-  },
+
   {
     pathname: "/our-staff",
     Icon: FiUser,
