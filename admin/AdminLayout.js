@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import NotFound from "@/app/components/NotFound";
 import { db } from "@/app/utils/firebase";
+import Auth from "@/app/components/auth";
 
 const AdminLayout = ({ children }) => {
   const [key, setKey] = useState(null);
@@ -21,7 +22,7 @@ const AdminLayout = ({ children }) => {
     };
   }, []);
 
-  return <>{user?.authKey === key ? children : <NotFound />}</>;
+  return <>{user?.authKey === key ? children : <Auth />}</>;
 };
 
 export default AdminLayout;

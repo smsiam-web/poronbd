@@ -18,6 +18,7 @@ import {
 import firebase from "firebase";
 import OrderDetailsFormUp from "./OrderDetails";
 import { orderValidationSchemaCOD } from "@/lib/validationSchema";
+import { updateCounters } from "@/lib/counters";
 
 // Helper to uppercase currency and normalize method casing, etc.
 const normalizeOrder = (values) => {
@@ -144,14 +145,13 @@ const AddOrder = ({ onClick }) => {
            });
            const result = await response.json();
            const orderData = {
-             normalized,
+             ...normalized,
              orderID,
            };
            // console.log(orderData);
            try {
-              await db.collection("orders").doc(orderID).set(normalized);
+              await db.collection("orders").doc(orderID).set(orderData);
              // order ডক পড়ুন যাতে timestamp মিলে যায়
-            
               updateCounters(orderData);
       
            } catch (error) {
@@ -162,7 +162,7 @@ const AddOrder = ({ onClick }) => {
                autoClose: 5000,
              });
  
-             setOrderResponse(null);
+            //  setOrderResponse(null);
              console.error("Error placing order:", error);
            } finally {
              // setOrderResponse(null);
