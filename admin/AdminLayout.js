@@ -22,7 +22,7 @@ const AdminLayout = ({ children }) => {
     };
   }, []);
 
-  return <>{user?.authKey === key ? children : <Auth />}</>;
+  return <>{children} </>;
 };
 
 export default AdminLayout;

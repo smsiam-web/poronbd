@@ -15,7 +15,7 @@ const DashboardLayout = ({ children }) => {
           <Breadcrumb />
         </div>
       </div>
-      {user ? <DashboardWrapper>{children}</DashboardWrapper> : <Auth />}
+       <DashboardWrapper>{children}</DashboardWrapper>
     </main>
   );
 };

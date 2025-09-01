@@ -142,13 +142,7 @@ const Layout = ({ children }) => {
 
   return (
     <>
-      {user?.authKey === key ? (
-        <AdminLayout>{children}</AdminLayout>
-      ) : (
-        <>
-          <Auth />
-        </>
-      )}
+      {user?.authKey === key ? <AdminLayout>{children}</AdminLayout> : <Auth />}
     </>
   );
 };
