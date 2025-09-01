@@ -92,49 +92,6 @@ function useTotalsAutoCompute() {
     setFieldValue("totals.items", +itemsSum.toFixed(2), false);
     setFieldValue("totals.grand", grand, false);
   }, [itemsSum, values, setFieldValue]);
-
-  //  useEffect(() => {
-  //   const phoneRaw = getIn(values, "customer.phone");
-  //   // keep leading 0s, strip non-digits
-  //   const phone = String(phoneRaw ?? "").replace(/\D/g, "");
-
-  //   if (phone.length !== 11) return;
-
-  //   // debounce to avoid many reads while typing
-  //   const timer = setTimeout(() => {
-  //     db.collection("customers").doc(phone).get()
-  //       .then((snap) => {
-  //         const setIfDiff = (path, val) => {
-  //           const cur = getIn(values, path);
-  //           if (cur !== val) setFieldValue(path, val, false);
-  //         };
-
-  //         if (!snap.exists) {
-  //           // ❌ no data found → clear form fields
-  //           setIfDiff("customer.phone", phone);
-  //           setIfDiff("customer.name", "");
-  //           setIfDiff("shipping_address.city", "");
-  //           setIfDiff("shipping_address.state", "");
-  //           setIfDiff("shipping_address.country", "");
-  //           setIfDiff("shipping_address.street", "");
-  //           return;
-  //         }
-
-  //         // ✅ data found → fill form
-  //         const data = snap.data();
-  //         setIfDiff("customer.phone", data?.customer?.phone ?? phone);
-  //         setIfDiff("customer.name", data?.customer?.name ?? "");
-  //         setIfDiff("shipping_address.city", data?.shipping_address?.city ?? "");
-  //         setIfDiff("shipping_address.state", data?.shipping_address?.state ?? "");
-  //         setIfDiff("shipping_address.country", data?.shipping_address?.country ?? "");
-  //         setIfDiff("shipping_address.street", data?.shipping_address?.street ?? "");
-  //       })
-  //       .catch((err) => console.error("Failed to load customer:", err));
-  //   }, 300);
-
-  //   return () => clearTimeout(timer);
-  //   // depend on the phone string only + setter
-  // }, [values]);
 }
 const Line = ({ h = "h-4", w = "w-full" }) => (
   <div className={`rounded bg-gray-200 ${h} ${w}`}></div>
@@ -266,7 +223,6 @@ const OrderDetailsFormUp = () => {
           </div>
         </div>
       </div>
-
       {/* CUSTOMER (with overlay) */}
       <div className="relative p-3 border rounded space-y-3">
         <SectionTitle>Customer</SectionTitle>
@@ -306,7 +262,6 @@ const OrderDetailsFormUp = () => {
           </div>
         </div>
       </div>
-
       {/* ADDRESSES (with overlay) */}
       <div className="relative p-3 border rounded space-y-3">
         <SectionTitle>Shipping Address</SectionTitle>
@@ -330,8 +285,234 @@ const OrderDetailsFormUp = () => {
         </div>
       </div>
 
-      {/* ... keep the rest of your form unchanged ... */}
-      {/* ITEMS, DISCOUNTS & TOTALS, PAYMENT, FULFILLMENT, META */}
+      {/* ITEMS */}
+      <div className="space-y-3 p-3 border rounded">
+        <SectionTitle>Items</SectionTitle>
+        <div className="col-span-6">
+          <ProductSearchAddWithCreate />
+        </div>
+        <FieldArray
+          name="items"
+          render={({ push, remove }) => (
+            <div className="space-y-3">
+              {(getIn(values, "items") || []).map((_, i) => (
+                <ItemRow key={i} index={i} onRemove={() => remove(i)} />
+              ))}
+
+              {/* <button
+                type="button"
+                className="text-sm underline"
+                onClick={() =>
+                  push({
+                    product_id: "",
+                    variant_id: null,
+                    sku: "",
+                    title: "",
+                    slug: "",
+                    unit: "pc",
+                    options: [],
+                    image: null,
+                    price: 0,
+                    compare_at_price: null,
+                    quantity: 1,
+                    currency: getIn(values, "currency") || "BDT",
+                    tax_rate: 0,
+                    line_total: 0,
+                    inventory_allocation: [{ location_code: "MAIN", qty: 0 }],
+                  })
+                }
+              >
+                + Add item
+              </button> */}
+            </div>
+          )}
+        />
+      </div>
+
+      {/* DISCOUNTS & TOTALS */}
+      <div className="grid grid-cols-2 gap-3 p-3 border rounded">
+        <div className="space-y-2">
+          <SectionTitle>Discounts</SectionTitle>
+          <FieldArray
+            name="discounts"
+            render={({ push, remove }) => (
+              <div className="space-y-2">
+                {(getIn(values, "discounts") || []).map((_, idx) => (
+                  <div key={idx} className="grid grid-cols-5 gap-2 items-end">
+                    <div className="col-span-3">
+                      <span>Code</span>
+                      <FormInput
+                        name={`discounts[${idx}].code`}
+                        placeholder="WELCOME10"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <span>Amount</span>
+                      <FormInput
+                        type="number"
+                        name={`discounts[${idx}].amount`}
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="col-span-5">
+                      <button
+                        type="button"
+                        onClick={() => remove(idx)}
+                        className="text-sm text-red-500"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="text-sm underline"
+                  onClick={() => push({ code: "", amount: 0 })}
+                >
+                  + Add discount
+                </button>
+              </div>
+            )}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <SectionTitle>Totals</SectionTitle>
+          <div>
+            <span>Items Subtotal</span>
+            <FormInput name="totals.items" type="number" readOnly />
+            <Subtle>Auto-calculated from line totals</Subtle>
+          </div>
+          <div>
+            <span>Discount</span>
+            <FormInput
+              name="totals.discount"
+              type="number"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <span>Shipping</span>
+            <FormInput
+              name="totals.shipping"
+              type="number"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <span>Tax</span>
+            <FormInput name="totals.tax" type="number" placeholder="0.00" />
+          </div>
+          <div>
+            <span>Grand Total</span>
+            <FormInput name="totals.grand" type="number" readOnly />
+            <Subtle>items - discount + shipping + tax</Subtle>
+          </div>
+        </div>
+      </div>
+
+      {/* PAYMENT & FULFILLMENT */}
+      <div className="grid grid-cols-2 gap-3 p-3 border rounded">
+        <div className="space-y-3">
+          <SectionTitle>Payment</SectionTitle>
+          <div>
+            <span>Method</span>
+            <FormDropdown
+              name="payment.method"
+              placeholder="Select"
+              items={PAYMENT_METHODS}
+            />
+          </div>
+          <div>
+            <span>Status</span>
+            <FormDropdown
+              name="payment.status"
+              placeholder="Select"
+              items={PAYMENT_STATUS}
+            />
+          </div>
+          <div>
+            <span>Transaction ID</span>
+            <FormInput
+              name="payment.transaction_id"
+              placeholder="(if available)"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <SectionTitle>Fulfillment</SectionTitle>
+          <div>
+            <span>Status</span>
+            <FormDropdown
+              name="fulfillment.status"
+              placeholder="Select"
+              items={FULFILLMENT_STATUS}
+            />
+          </div>
+
+          <div>
+            <span>Courier</span>
+            <FormDropdown
+              name="fulfillment.courier"
+              placeholder="Select"
+              items={COURIER}
+              defaultValue={"Pathao"}
+            />
+          </div>
+
+          <div>
+            <span>Tracking Numbers</span>
+            <FieldArray
+              name="fulfillment.tracking_numbers"
+              render={({ push, remove }) => (
+                <div className="space-y-2">
+                  {(getIn(values, "fulfillment.tracking_numbers") || []).map(
+                    (_, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <FormInput
+                          name={`fulfillment.tracking_numbers[${idx}]`}
+                          placeholder="TRK..."
+                        />
+                        <button
+                          type="button"
+                          onClick={() => remove(idx)}
+                          className="text-sm text-red-500"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )
+                  )}
+                  <button
+                    type="button"
+                    className="text-sm text-green-600"
+                    onClick={() => push("")}
+                  >
+                    + Add tracking
+                  </button>
+                </div>
+              )}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* META & NOTES */}
+      <div className="p-3 border rounded space-y-3">
+        <SectionTitle>Meta & Notes</SectionTitle>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <span>Source</span>
+            <FormInput name="meta.source" placeholder="web / app / pos" />
+          </div>
+          <div>
+            <span>Notes</span>
+            <AppTextArea name="notes" placeholder="Internal notes" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

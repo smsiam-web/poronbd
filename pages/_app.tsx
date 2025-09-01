@@ -28,11 +28,11 @@ export default function App({ Component, pageProps }: AppProps) {
   };
 
     // Default if route not in map
-  const title = routeTitles[router.pathname] || "My Shop";
+  const title = routeTitles[router.pathname];
   return (
     <Provider store={store}>
       <Head>
-        <title>Poron || {title}</title>
+        <title>Poron || {title ? title : "Loading"}</title>
         <meta name="description" content="Order your favorite products easily" />
         <link rel="icon" href="/favicon.ico?v=2" />
       </Head>
