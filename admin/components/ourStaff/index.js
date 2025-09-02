@@ -16,7 +16,7 @@ const OurStaff = () => {
     useEffect(() => {
       const unSub = db
         .collection("users")
-        .orderBy("timestamp", "desc")
+        .orderBy("created_at", "desc")
         .onSnapshot((snap) => {
           const ourStaffs = [];
           snap.docs.map((doc) => {

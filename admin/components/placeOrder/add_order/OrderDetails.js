@@ -12,6 +12,9 @@ import { db } from "@/app/utils/firebase";
 // --- Select options ---
 const ORDER_STATUS = [
   { name: "Pending", id: "pending" },
+  { name: "Processing", id: "processing" },
+  { name: "Shipped", id: "shipped" },
+  { name: "Delivered", id: "delivered" },
   { name: "Paid", id: "paid" },
   { name: "Fulfilled", id: "fulfilled" },
   { name: "Cancelled", id: "cancelled" },
@@ -45,11 +48,7 @@ const YES_NO = [
   { name: "No", id: false },
 ];
 
-const CURRENCY = [
-  { name: "BDT", id: "BDT" },
-  { name: "USD", id: "USD" },
-  { name: "EUR", id: "EUR" },
-];
+const CURRENCY = [{ name: "BDT", id: "BDT" }];
 
 const COURIER = [
   {
@@ -109,17 +108,19 @@ const SectionSkeleton = () => (
   </div>
 );
 
- function useCustomerAutofill() {
+function useCustomerAutofill() {
   const { values, setFieldValue } = useFormikContext();
   const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
 
   // কেবল ফোন ডিজিটস ট্র্যাক করুন
-  const phoneDigits = String(getIn(values, "customer.phone") ?? "")
-    .replace(/\D/g, "");
+  const phoneDigits = String(getIn(values, "customer.phone") ?? "").replace(
+    /\D/g,
+    ""
+  );
 
   const timerRef = useRef(null);
-  const lastFetchedRef = useRef(null);     // শেষ যেটা ফেচ হয়েছে
-  const aliveRef = useRef(true);           // cleanup guard
+  const lastFetchedRef = useRef(null); // শেষ যেটা ফেচ হয়েছে
+  const aliveRef = useRef(true); // cleanup guard
 
   useEffect(() => {
     aliveRef.current = true;
@@ -169,7 +170,10 @@ const SectionSkeleton = () => (
         setIfDiff("customer.phone", data?.customer?.phone ?? phoneDigits);
         setIfDiff("customer.name", data?.customer?.name ?? "");
         setIfDiff("shipping_address.city", data?.shipping_address?.city ?? "");
-        setIfDiff("shipping_address.state", data?.shipping_address?.state ?? "");
+        setIfDiff(
+          "shipping_address.state",
+          data?.shipping_address?.state ?? ""
+        );
         setIfDiff(
           "shipping_address.country",
           data?.shipping_address?.country ?? ""
@@ -378,39 +382,17 @@ const OrderDetailsFormUp = () => {
         </div>
         <FieldArray
           name="items"
-          render={({ push, remove }) => (
-            <div className="space-y-3">
-              {(getIn(values, "items") || []).map((_, i) => (
-                <ItemRow key={i} index={i} onRemove={() => remove(i)} />
-              ))}
-
-              {/* <button
-                type="button"
-                className="text-sm underline"
-                onClick={() =>
-                  push({
-                    product_id: "",
-                    variant_id: null,
-                    sku: "",
-                    title: "",
-                    slug: "",
-                    unit: "pc",
-                    options: [],
-                    image: null,
-                    price: 0,
-                    compare_at_price: null,
-                    quantity: 1,
-                    currency: getIn(values, "currency") || "BDT",
-                    tax_rate: 0,
-                    line_total: 0,
-                    inventory_allocation: [{ location_code: "MAIN", qty: 0 }],
-                  })
-                }
-              >
-                + Add item
-              </button> */}
-            </div>
-          )}
+          render={({ remove }) => {
+            const items = getIn(values, "items") || [];
+            const idxs = items.map((_, i) => i).reverse(); // [n-1, n-2, ... , 0]
+            return (
+              <div className="space-y-3">
+                {idxs.map((idx) => (
+                  <ItemRow key={idx} index={idx} onRemove={() => remove(idx)} />
+                ))}
+              </div>
+            );
+          }}
         />
       </div>
 

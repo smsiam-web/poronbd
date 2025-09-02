@@ -12,12 +12,10 @@ const SearchStaff = ({ onClick }) => {
   const [currentValue, setCurrentValue] = useState(null);
   const [ourStaffs, setOurStaffs] = useState([]);
   const dispatch = useDispatch();
-  const [limits, setLimits] = useState(false);
+
   const user = useSelector(selectUser);
 
-  useEffect(() => {
-    setLimits(user.staff_role === "HR" || user.staff_role === "CEO");
-  }, []);
+
 
   const handleChange = (e) => {
     setCurrentValue(e.currentTarget.value);
@@ -70,7 +68,7 @@ const SearchStaff = ({ onClick }) => {
   useEffect(() => {
     const unSub = db
       .collection("users")
-      .orderBy("timestamp", "desc")
+      .orderBy("created_at", "desc")
       .onSnapshot((snap) => {
         const ourStaff = [];
         snap.docs.map((doc) => {
@@ -120,7 +118,7 @@ const SearchStaff = ({ onClick }) => {
             {/* add category btn  */}
             <div
               className={`${
-                limits ? "" : "hidden"
+                user?.staff_role === "HR" ? "" : "hidden"
               } w-full disabled md:w-56 lg:w-56 xl:w-56`}
             >
               <Button

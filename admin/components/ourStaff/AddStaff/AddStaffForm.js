@@ -13,9 +13,6 @@ const AddStaffForm = ({onChange}) => {
       (i.email === e.target.value) ? setUser(i) : setUser(null)
     })
   }
-  
-  console.log(user)
-  console.log(user?.name)
 
     // Get user from firebase database
     useEffect(() => {

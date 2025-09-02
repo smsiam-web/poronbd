@@ -3,9 +3,8 @@ import "./fonts/lialinurBanglaFont";
 import "./fonts/LiAnis-normal";
 import "./fonts/SolaimanLipi-normal";
 import { format } from "date-fns";
-import { timestamp } from "@/app/utils/firebase";
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-
+import autoTable from "jspdf-autotable";
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>;
 
 // create random unique id
 export const uuid = () => {
@@ -120,8 +119,18 @@ export const Today = () => {
 };
 export const TimeStampToDate = (timestamp) => {
   const month = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
 
   if (!timestamp?.seconds) return "";
@@ -138,9 +147,12 @@ export const TimeStampToDate = (timestamp) => {
   return `${mm} ${dd}, ${yyyy}`;
 };
 
-
 export const ToDateAndTime = (timestamp) => {
-  if (!timestamp?.toDate || !timestamp || typeof timestamp.toDate !== "function") {
+  if (
+    !timestamp?.toDate ||
+    !timestamp ||
+    typeof timestamp.toDate !== "function"
+  ) {
     return ""; // or return "N/A"
   }
 
@@ -163,8 +175,6 @@ export const ToDateAndTime = (timestamp) => {
 
   return `${dateStr} at ${timeStr}`;
 };
-
-
 
 export const TodayDate = () => {
   let date = new Date();
@@ -190,7 +200,7 @@ export const daysInMonth = (month, year) => {
 };
 
 export const invoiceGenerate = (item) => {
-  const date = formatDates(item?.created_at)
+  const date = formatDates(item?.created_at);
   const doc = new jsPDF();
 
   let item_01 = "",
@@ -292,22 +302,18 @@ export const invoiceGenerate = (item) => {
   doc.text(item_06_price, 137, 208.2);
   doc.text(item_06_total_price, 168, 208.2);
 
-  doc
-    .setFontSize(12)
-    .text(`[Note: ${item?.meta?.notes || ""}]`, 8, 218.2, {
-      maxWidth: 120,
-      align: "left",
-    });
+  doc.setFontSize(12).text(`[Note: ${item?.meta?.notes || ""}]`, 8, 218.2, {
+    maxWidth: 120,
+    align: "left",
+  });
   doc.text(`${item?.totals?.items}/-`.toString(), 161, 225.5);
   doc.text(`${item?.totals?.shipping}/-`, 161, 233.8);
   doc.text(`-${item?.totals?.discount}/-`.toString(), 161, 242.2);
 
-  doc
-    .setFontSize(12)
-    .text(`${item?.shipping_address?.street}`, 36.4, 106.5, {
-      maxWidth: 165,
-      align: "left",
-    });
+  doc.setFontSize(12).text(`${item?.shipping_address?.street}`, 36.4, 106.5, {
+    maxWidth: 165,
+    align: "left",
+  });
   doc.text(date, 93, 83.5);
   doc.setFont(undefined, "bold");
   doc.setFontSize(15).text(item?.orderID, 43, 83.5);
@@ -321,53 +327,515 @@ export const invoiceGenerate = (item) => {
   doc.output("dataurlnewwindow");
 };
 function barcodeDataURL(value, options = {}) {
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   JsBarcode(canvas, String(value), {
-    format: 'CODE128',
-    width: 2,       // bar thickness (increase for denser bars)
-    height: 60,     // bar height (px)
+    format: "CODE128",
+    width: 2, // bar thickness (increase for denser bars)
+    height: 60, // bar height (px)
     displayValue: false,
     margin: 0,
     ...options,
   });
-  return canvas.toDataURL('image/png'); // "data:image/png;base64,...."
+  return canvas.toDataURL("image/png"); // "data:image/png;base64,...."
 }
-export const generateStick = (item, barCodeImageLink) => {
-  const doc = new jsPDF();
-// ✅ Get page width once
-const pageWidth = doc.internal.pageSize.getWidth();
 
-// ✅ Center the barcode
-// let image = `${barCodeImageLink}`;
-const img = barcodeDataURL(item?.courier?.consignment_id);
-const barcodeWidth = 150;
-const barcodeHeight = 30;
-const barcodeX = (pageWidth - barcodeWidth) / 2; // center horizontally
-doc.addImage(img, barcodeX, 30, barcodeWidth, barcodeHeight);
-  // doc.addImage(image, 30, 30, 140, 35);
+// import "jspdf-autotable"; // লাগলে অটো-টেবিল ব্যবহার করতে পারেন; এখানে কাস্টম টেবিল দিয়েছি
+
+// export const generateStick = (item) => {
+//   const doc = new jsPDF({ unit: "mm" }); // ডিফল্ট A4, mm ইউনিট
+//   const pageWidth = doc.internal.pageSize.getWidth();
+//   const marginX = 10;
+
+//   // ---------- helpers ----------
+//   const centerText = (text, y, fontSize = 14, fontStyle = "normal") => {
+//     doc.setFontSize(fontSize);
+//     doc.setFont(undefined, fontStyle);
+//     const textW = doc.getTextWidth(String(text || ""));
+//     const x = (pageWidth - textW) / 2;
+//     doc.text(String(text || ""), x, y);
+//   };
+
+//   const drawLabelValueRow = ({
+//     y,
+//     label,
+//     value,
+//     labelW = 35,
+//     fontSize = 12,
+//     colonX = marginX + labelW + 2,
+//     valueX = marginX + labelW + 6,
+//     valueMaxW = pageWidth - marginX - valueX,
+//   }) => {
+//     doc.setFontSize(fontSize);
+//     // label
+//     doc.setFont(undefined, "bold");
+//     doc.text(String(label || ""), marginX, y);
+//     // colon (aligned)
+//     doc.setFont(undefined, "normal");
+//     doc.text(":", colonX, y);
+//     // value (wrap-able)
+//     const wrapped = doc.splitTextToSize(String(value || ""), valueMaxW);
+//     doc.text(wrapped, valueX, y);
+//     // return how much height used
+//     const lineHeight = fontSize * 0.5 + 3; // approx
+//     const usedH = Math.max(lineHeight, wrapped.length * lineHeight);
+//     return y + usedH; // next y
+//   };
+
+//   const drawBarcodeCentered = ({ dataUrl, y, w = 60, h = 18 }) => {
+//     const x = (pageWidth - w) / 2;
+//     doc.addImage(dataUrl, "PNG", x, y, w, h);
+//   };
+
+//   const drawItemsTable = ({
+//     rows,
+//     startY,
+//     headerH = 9,
+//     fontSize = 11,
+//     rowMinH = 8,
+//     borderColor = "#000000",
+//   }) => {
+//     // Columns: # | Item | Qty | Line
+//     const tableW = pageWidth - marginX * 2;
+//     const colW = {
+//       sl: Math.max(12, tableW * 0.10),
+//       item: Math.max(60, tableW * 0.55),
+//       qty: Math.max(16, tableW * 0.15),
+//       total: Math.max(18, tableW * 0.20),
+//     };
+//     // normalize widths to fit
+//     const sumW = colW.sl + colW.item + colW.qty + colW.total;
+//     const scale = tableW / sumW;
+//     Object.keys(colW).forEach((k) => (colW[k] = +(colW[k] * scale).toFixed(2)));
+
+//     let y = startY;
+
+//     // header
+//     doc.setDrawColor(borderColor);
+//     doc.setLineWidth(0.2);
+//     doc.setFillColor(240, 240, 240);
+//     doc.rect(marginX, y, tableW, headerH, "FD");
+
+//     doc.setFontSize(fontSize);
+//     doc.setFont(undefined, "bold");
+//     let x = marginX;
+
+//     doc.text("#", x + 2, y + headerH - 3);
+//     x += colW.sl;
+//     doc.text("Item", x + 2, y + headerH - 3);
+//     x += colW.item;
+//     doc.text("Qty", x + colW.qty / 2, y + headerH - 3, { align: "center" });
+//     x += colW.qty;
+//     doc.text("Line", x + colW.total - 2, y + headerH - 3, { align: "right" });
+
+//     y += headerH;
+
+//     // rows
+//     doc.setFont(undefined, "normal");
+
+//     rows.forEach((r, idx) => {
+//       const sl = String(idx + 1);
+//       const itemText = String(r.title || "");
+//       const qtyText = String(r.quantity ?? 0);
+//       const lineText = (Number(r.line_total ?? (r.price || 0) * (r.quantity || 0))).toFixed(2);
+
+//       // wrap item cell
+//       const itemWrapped = doc.splitTextToSize(itemText, colW.item - 4);
+//       const lineHeight = fontSize * 0.5 + 3; // approx
+//       const rowH = Math.max(rowMinH, itemWrapped.length * lineHeight);
+
+//       // row box
+//       doc.rect(marginX, y, tableW, rowH);
+
+//       // cells text
+//       let cx = marginX;
+//       // SL (center)
+//       doc.text(sl, cx + colW.sl / 2, y + rowH / 2 + 2, { align: "center" });
+//       cx += colW.sl;
+
+//       // Item (multi-line)
+//       doc.text(itemWrapped, cx + 2, y + 5);
+//       cx += colW.item;
+
+//       // Qty (center)
+//       doc.text(qtyText, cx + colW.qty / 2, y + rowH / 2 + 2, { align: "center" });
+//       cx += colW.qty;
+
+//       // Line total (right)
+//       doc.text(lineText, cx + colW.total - 2, y + rowH / 2 + 2, { align: "right" });
+
+//       y += rowH;
+//     });
+
+//     return y;
+//   };
+
+//   // ---------- header / branding ----------
+//   centerText("PORON", 18, 18, "bold");
+//   centerText("Thanks for being with us.", 26, 12);
+//   centerText("HOME DELIVERY", 34, 12);
+//   centerText("Hotline: +88 01773-043533", 42, 12);
+//   centerText("Address: Savar, Dhaka-1216", 50, 12);
+
+//   // ---------- barcode + consignment ----------
+//   const consignmentId = String(item?.fulfillment?.consignment_id || "");
+//   try {
+//     const img = barcodeDataURL(consignmentId);
+//     drawBarcodeCentered({ dataUrl: img, y: 58, w: 80, h: 20 });
+//   } catch (e) {
+//     // barcode না পারলে শুধু আইডি দেখাই
+//   }
+//   centerText(consignmentId, 84, 18, "bold");
+
+//   // ---------- receiver/sender + customer block ----------
+//   let y = 98;
+
+//   doc.setFont(undefined, "bold");
+//   doc.setFontSize(14);
+//   doc.text("Receiver", marginX, y);
+//   doc.setFont(undefined, "normal");
+
+//   y = drawLabelValueRow({
+//     y: y + 8,
+//     label: "Name",
+//     value: item?.customer?.name || "",
+//     labelW: 30,
+//     fontSize: 12,
+//   });
+
+//   y = drawLabelValueRow({
+//     y: y + 6,
+//     label: "Phone",
+//     value: item?.customer?.phone || "",
+//     labelW: 30,
+//     fontSize: 12,
+//   });
+
+//   y = drawLabelValueRow({
+//     y: y + 6,
+//     label: "Address",
+//     value: item?.shipping_address?.street || "",
+//     labelW: 30,
+//     fontSize: 12,
+//   });
+
+//   // COD centered under receiver block
+//   centerText(`COD: ${Number(item?.totals?.grand || 0).toFixed(2)}/-`, y + 8, 16, "bold");
+
+//   // ---------- items table ----------
+//   const items = Array.isArray(item?.items) ? item.items : [];
+//   const rows = items.map((it) => {
+//     // অপশনগুলো থাকলে টাইটেলে যোগ করি (e.g., Color: Black, Size: M)
+//     const opt = Array.isArray(it?.options)
+//       ? it.options
+//           .filter((o) => o?.name && (o?.value[0].name || o?.value))
+//           .map((o) => `${o.name}: ${o.value[0].name || o.value}`)
+//           .join(", ")
+//       : "";
+//     const title = opt ? `${it.title} (${opt})` : it.title;
+//     return {
+//       title,
+//       quantity: it.quantity ?? 1,
+//       price: it.price ?? 0,
+//       line_total: it.line_total ?? (it.price || 0) * (it.quantity || 0),
+//     };
+//   });
+
+//   if (rows.length) {
+//     const afterTableY = drawItemsTable({
+//       rows,
+//       startY: y + 20,
+//       fontSize: 11,
+//     });
+
+//     // নিচে ছোট সারাংশ/ধন্যবাদ
+//     centerText("— Thank you —", afterTableY + 10, 12);
+//   } else {
+//     // যদি আইটেম না থাকে, প্লেসহোল্ডার
+//     doc.setFontSize(12);
+//     doc.text("Items: (none)", marginX, y + 20);
+//   }
+
+//   // ---------- footer ----------
+//   centerText("Created by SM.Devware.", 285, 12);
+
+//   doc.autoPrint();
+//   doc.output("dataurlnewwindow");
+// };
+
+// <-- NEW
+
+// // আপনার বারকোড ডেটা ইউআরএল জেনারেটর
+// // function barcodeDataURL(consignmentId) { ... }
+
+// export const generateStick = (item) => {
+//   const doc = new jsPDF(); // unit: mm (default)
+
+//   // Page helpers
+//   const pageWidth = doc.internal.pageSize.getWidth();
+//   const centerText = (text, y, fontSize = 36, fontStyle = "normal") => {
+//     doc.setFontSize(fontSize);
+//     doc.setFont(undefined, fontStyle);
+//     const textWidth = doc.getTextWidth(String(text || ""));
+//     const x = (pageWidth - textWidth) / 2;
+//     doc.text(String(text || ""), x, y);
+//   };
+
+//   // ---------------- BARCODE (centered)
+//   const img = barcodeDataURL(item?.courier?.consignment_id || item?.fulfillment?.consignment_id);
+//   const barcodeWidth = 150;
+//   const barcodeHeight = 30;
+//   const barcodeX = (pageWidth - barcodeWidth) / 2;
+//   doc.addImage(img, barcodeX, 30, barcodeWidth, barcodeHeight);
+
+//   // ---------------- CONSIGNMENT (centered)
+//   const consignmentId = String(item?.fulfillment?.consignment_id || "");
+//   if (consignmentId) {
+//     doc.setFontSize(34);
+//     const textWidth = doc.getTextWidth(consignmentId);
+//     const textX = (pageWidth - textWidth) / 2;
+//     doc.text(consignmentId, textX, 74);
+//   }
+
+//   // ---------------- RECEIVER INFO (left aligned)
+//   doc.setFontSize(28);
+//   doc.text(`Name`, 22, 100);
+//   doc.text(`Phone`, 22, 112);
+//   doc.text(`Address`, 22, 124);
+
+//   doc.setFontSize(28);
+//   doc.text(`:`, 60, 100);
+//   doc.text(`:`, 60, 112);
+//   doc.text(`:`, 60, 124);
+
+//   doc.text(`${item?.customer?.name || ""}`, 65, 100);
+//   doc.text(`${item?.customer?.phone || ""}`, 65, 112);
+
+//   // Address may be long
+//   doc.setFontSize(26);
+//   doc.text(String(item?.shipping_address?.street || ""), 65, 124, {
+//     maxWidth: 140,
+//     align: "left",
+//   });
+
+//   // ---------------- ITEMS TABLE (NEW)
+//   // টেবিলটা 140–185 mm এর মধ্যে রাখছি যাতে নিচের HOME DELIVERY / COD না ঢেকে দেয়
+//   const startY = 140;
+//   const stopY = 185;
+//   const rowHeight = 8; // approx per row
+//   const headerHeight = 8;
+
+//   const items = Array.isArray(item?.items) ? item.items : [];
+//   const currency = String(item?.currency || "BDT").toUpperCase();
+
+//   // ডেটা মেপ করুন
+//   const bodyRows = items.map((it, i) => {
+//     const qty = Number(it?.quantity || 0);
+//     const price = Number(it?.price || 0);
+//     const total = Number(it?.line_total ?? qty * price);
+//     const title = String(it?.title || "");
+//     return [
+//       i + 1,
+//       title,
+//       qty > 0 ? `${qty} ${it?.unit || ""}`.trim() : "",
+//       formatMoney(price, currency),
+//       formatMoney(total, currency),
+//     ];
+//   });
+
+//   // ফিটিং রো সংখ্যা নির্ণয় করুন
+//   const availableHeight = stopY - startY - headerHeight;
+//   const maxRows = Math.max(0, Math.floor(availableHeight / rowHeight));
+//   let renderedBody = bodyRows.slice(0, maxRows);
+//   const hiddenCount = bodyRows.length - renderedBody.length;
+
+//   if (hiddenCount > 0) {
+//     // শেষ লাইনে “+N more” দেখান
+//     renderedBody[renderedBody.length - 1][1] += `  (+${hiddenCount} more…)`;
+//   }
+
+//   if (renderedBody.length > 0) {
+//     autoTable(doc, {
+//       startY,
+//       margin: { left: 15, right: 15 },
+//       head: [["#", "Item", "Qty", "Price", "Total"]],
+//       body: renderedBody,
+//       styles: { fontSize: 10, cellPadding: 2, lineColor: 200, lineWidth: 0.1 },
+//       headStyles: {
+//         fontStyle: "bold",
+//         fillColor: [240, 240, 240],
+//         textColor: 20,
+//         halign: "center",
+//       },
+//       columnStyles: {
+//         0: { cellWidth: 10, halign: "center" }, // #
+//         1: { cellWidth: "auto" },               // Item (flex)
+//         2: { cellWidth: 26, halign: "center" }, // Qty
+//         3: { cellWidth: 26, halign: "right" },  // Price
+//         4: { cellWidth: 30, halign: "right" },  // Total
+//       },
+//       theme: "grid",
+//       pageBreak: "avoid", // single label page only
+//       didDrawPage: (d) => {
+//         // Optional: draw a light separator above/below table if needed
+//       },
+//     });
+//   } else {
+//     // কোন আইটেম না থাকলে ছোটো একটা নোট
+//     doc.setFontSize(14);
+//     doc.text("No items", 16, startY + 6);
+//   }
+
+//   // ---------------- FOOTER / BRANDING (centered)
+//   centerText(`HOME DELIVERY`, 195, 40);
+//   centerText(`COD: ${formatMoney(item?.totals?.grand || 0, currency)}/-`, 210, 40);
+//   centerText(`Hotline: +88 01773-043533`, 247, 28);
+//   centerText(`Address: Savar, Dhaka-1216`, 259, 28);
+//   doc.setFont(undefined, "bold");
+//   centerText("PORON", 235, 36);
+//   centerText("PORON", 25, 55);
+//   centerText("Thanks for being with us.", 273, 34);
+
+//   // Receiver/Sender row (আপনার আগের মতোই)
+//   doc.setFontSize(34).text("Receiver:", 15, 88);
+//   doc.setFontSize(34).text(`${item?.orderID || ""}`, 120, 88);
+//   doc.setFontSize(34).text("Sender:", 15, 224);
+
+//   // ---------------- PRINT / PREVIEW
+//   // doc.autoPrint(); // auto print চাইলে রাখুন
+//   doc.output("dataurlnewwindow");
+// };
+
+// ছোটো হেল্পার—টাকা ফরম্যাট
+
+function formatMoney(v) {
+  const n = Number(v || 0);
+  // “৳” দেখাতে চাইলে:
+  // const symbol = currency === "BDT" ? "৳" : currency + " ";
+  // return `${symbol}${n.toFixed(2)}`;
+  return `${n.toFixed(2)}`;
+}
+
+export const generateStick = (item) => {
+  const doc = new jsPDF();
+  // ✅ Get page width once
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  // ✅ Center the barcode
+  // let image = `${barCodeImageLink}`;
+  const img = barcodeDataURL(item?.courier?.consignment_id);
+  const barcodeWidth = 150;
+  const barcodeHeight = 30;
+  const barcodeX = (pageWidth - barcodeWidth) / 2; // center horizontally
+  doc.addImage(img, barcodeX, 30, barcodeWidth, barcodeHeight);
+
+  // টেবিলটা 140–185 mm এর মধ্যে রাখছি যাতে নিচের HOME DELIVERY / COD না ঢেকে দেয়
+  const startY = 140;
+  const stopY = 185;
+  const rowHeight = 5; // approx per row
+  const headerHeight = 5;
+
+  const items = Array.isArray(item?.items) ? item.items : [];
+
+  // ডেটা মেপ করুন
+  const bodyRows = items.map((it, i) => {
+    const opt = Array.isArray(it?.option)
+      ? it.option.map((o) => `${o.value || o.value}`).join(", ")
+      : "";
+    const title = opt ? `${it.title} (${opt})` : it.title;
+    const qty = Number(it?.quantity || 0);
+    const price = Number(it?.price || 0);
+    const total = Number(it?.line_total ?? qty * price);
+    // const title = String(it?.title || "");
+    return [
+      i + 1,
+      title,
+      qty > 0 ? `${qty} ${it?.unit || ""}`.trim() : "",
+      formatMoney(price),
+      formatMoney(total),
+    ];
+  });
+
+  // ফিটিং রো সংখ্যা নির্ণয় করুন
+  const availableHeight = stopY - startY - headerHeight;
+  const maxRows = Math.max(0, Math.floor(availableHeight / rowHeight));
+  let renderedBody = bodyRows.slice(0, maxRows);
+  const hiddenCount = bodyRows.length - renderedBody.length;
+
+  if (hiddenCount > 0) {
+    // শেষ লাইনে “+N more” দেখান
+    renderedBody[renderedBody.length - 1][1] += `  (+${hiddenCount} more…)`;
+  }
+
+  if (renderedBody.length > 0) {
+    autoTable(doc, {
+      startY,
+      margin: { left: 15, right: 15 },
+      body: renderedBody, // 5-কলামের রো: [#, Item, Qty, Price, Total]
+      theme: "grid",
+
+      // 🔥 গ্লোবাল সেল স্টাইল
+      styles: {
+        fontSize: 14,
+        cellPadding: 2,
+        textColor: [0, 0, 0], // টেক্সট কালো
+        lineColor: [0, 0, 0], // সেলের বর্ডার কালো
+        lineWidth: 0.2,
+        fillColor: null, // কোন ব্যাকগ্রাউন্ড না
+      },
+      bodyStyles: {
+        textColor: [0, 0, 0], // বডি টেক্সট কালো
+      },
+
+      // 🔥 টেবিলের আউটার বর্ডারও কালো/পুরু
+      tableLineColor: [0, 0, 0],
+      tableLineWidth: 0.2,
+
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" }, // #
+        1: { cellWidth: "auto" }, // Item
+        2: { cellWidth: 16, halign: "center" }, // Qty
+        3: { cellWidth: 26, halign: "right" }, // Price
+        4: { cellWidth: 30, halign: "right" }, // Total
+      },
+
+      // (ঐচ্ছিক) একদম নিশ্চিত করতে:
+      didDrawCell: (data) => {
+        const d = data.doc;
+        d.setTextColor(0, 0, 0);
+        d.setDrawColor(0, 0, 0);
+      },
+    });
+  } else {
+    // কোন আইটেম না থাকলে ছোটো একটা নোট
+    doc.setFontSize(14);
+    doc.text("No items", 16, startY + 6);
+  }
 
   doc.setFontSize(22).text(`Created by SM.Devware.`, 105, 285);
-  doc.setFontSize(34);
-  doc.text(`Name: ${item?.customer_details.customer_name}`, 22, 100);
-  doc.text(`Phone: ${item?.customer_details.phone_number}`, 22, 112);
+  doc.setFontSize(28);
+  doc.text(`Name`, 22, 100);
+  doc.text(`Phone`, 22, 112);
+  doc.text(`${item?.customer?.name}`, 65, 100);
+  doc.text(`${item?.customer?.phone}`, 65, 112);
 
-  doc.text(`Hotline: +88 09647323700`, 30, 238);
-  doc.text(`Address: Nouhata, Paba, Rajshahi.`, 9, 250);
+  doc.text(`:`, 60, 124);
+  doc.text(`:`, 60, 100);
+  doc.text(`:`, 60, 112);
 
-  doc.text(`Address: `, 22, 124);
-  doc.setFontSize(26).text(item?.customer_details.customer_address, 72, 124, {
+  doc.text(`Address`, 22, 124);
+
+  doc.setFontSize(16).text(item?.shipping_address?.street, 65, 124, {
     maxWidth: 140,
     align: "left",
   });
 
   // ✅ Center the consignment ID text
-const consignmentId = `${item?.courier?.consignment_id}`;
-doc.setFontSize(36);
-const textWidth = doc.getTextWidth(consignmentId);
-const textX = (pageWidth - textWidth) / 2;
-doc.text(consignmentId, textX, 74);
+  const consignmentId = `${item?.fulfillment?.consignment_id}`;
+  doc.setFontSize(34);
+  const textWidth = doc.getTextWidth(consignmentId);
+  const textX = (pageWidth - textWidth) / 2;
+  doc.text(consignmentId, textX, 74);
 
-  doc.setFont(undefined, "bold");
   // doc.setFontSize(26).text(`(WGT: ${item?.weight}kg)`, 6, 74);
 
   // ✅ Center "Jannat Fashion"
@@ -378,91 +846,104 @@ doc.text(consignmentId, textX, 74);
     const x = (pageWidth - textWidth) / 2;
     doc.text(text, x, y);
   };
+  centerText(`Address: Savar, Dhaka-1216`, 259, 28);
+  centerText(`Hotline: +88 01773-043533`, 247, 28);
+  doc.setFont(undefined, "bold");
+  centerText("PORON", 235, 36); // centered version
+  centerText(`HOME DELIVERY`, 205, 40);
+  centerText(`COD: ${item?.totals?.grand}/-`, 218, 40);
 
-  centerText("Jannat Fashion", 225, 36); // centered version
-  centerText(
-    `${item?.customer_details.delivery_type ? "HOME" : "POINT"} DELIVERY`,
-    180,
-    40
-  );
-  centerText(`COD: ${item?.customer_details.salePrice}/-`, 195, 40);
-
-  doc.setFontSize(36).text("Receiver:", 15, 88);
-  doc.setFontSize(36).text(`${item?.id}`, 120, 88);
-  doc.setFontSize(36).text("Sender:", 15, 210);
+  doc.setFontSize(34).text("Receiver:", 15, 88);
+  doc.setFontSize(34).text(`${item?.orderID}`, 120, 88);
+  doc.setFontSize(34).text("Sender:", 15, 226);
 
   // Top brand title (can also be centered if you prefer)
-  centerText("Jannat Fashion", 25, 55);
+  centerText("PORON", 25, 55);
 
-  centerText("Thanks for being with us.", 270, 36);
+  centerText("Thanks for being with us.", 273, 34);
+  // const fileName = `${
+  //   item?.orderID || item?.fulfillment?.consignment_id || "order"
+  // }.pdf`;
 
+  // const blob = doc.output("blob");
+  // const url = URL.createObjectURL(blob); // নতুন ট্যাবে দেখান
+  // window.open(url, "_blank");
+  // // আলাদা কোনো বোতামে:
+  // const a = document.createElement("a");
+  // a.href = url;
+  // a.download = fileName; // কাস্টম ফাইলনেম
+  // a.click();
+  // URL.revokeObjectURL(url);
+
+  // ধরে নিচ্ছি doc = new jsPDF() দিয়ে PDF বানিয়ে ফেলেছেন
+  // ... আপনার আঁকার কোড ...
+
+  // 🔥 Enable PDF auto-print (adds OpenAction in the PDF)
   doc.autoPrint();
-  doc.output("dataurlnewwindow");
+
+  const fileName = `${
+    item?.orderID || item?.fulfillment?.consignment_id || "order"
+  }.pdf`;
+
+  // Make a Blob + URL
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+
+  // ✅ Preview in a new tab + try to auto-print as soon as it loads
+  const w = window.open("", "_blank");
+  if (w) {
+    w.document.write(`
+    <html>
+      <head><title>${fileName}</title></head>
+      <body style="margin:0">
+        <iframe id="pdf" src="${url}" style="border:0;width:100%;height:100vh;"></iframe>
+        <script>
+          const frame = document.getElementById('pdf');
+          frame.addEventListener('load', () => {
+            try {
+              // Chrome সাধারণত OpenAction (autoPrint) রেস্পেক্ট করে।
+              // তবু সেফটির জন্য প্রোগ্রাম্যাটিক প্রিন্টও ট্রাই করি:
+              frame.contentWindow && frame.contentWindow.focus();
+              frame.contentWindow && frame.contentWindow.print();
+            } catch (e) {}
+          });
+          // ট্যাব বন্ধ হলে URL revoke
+          window.addEventListener('beforeunload', () => URL.revokeObjectURL('${url}'));
+        <\/script>
+      </body>
+    </html>
+  `);
+    w.document.close();
+  } else {
+    // popup blocked হলে fallback: শুধু ওপেন করুন
+    window.open(url, "_blank");
+  }
+
+  // 🟦 (Optional) আলাদা বাটনে/অ্যাকশনে কাস্টম ফাইলনেম ডাউনলোড
+  // একই blob URL ইউজ করলে খুব তাড়াতাড়ি revoke করবেন না
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+
+  // ⚠️ খুব তাড়াতাড়ি revoke করলে নতুন ট্যাব লোড হতে নাও পারে। একটু দেরিতে revoke করুন:
+  setTimeout(() => URL.revokeObjectURL(url), 60000); // 60s পরে নিরাপদে রিভোক
+
+  // doc.save(fileName);
+  // doc.autoPrint();
+  // doc.output("dataurlnewwindow");
 };
 
-// export const generateStick = (item, barCodeImageLink) => {
-//   const doc = new jsPDF();
-
-//   let image = `${barCodeImageLink}`;
-//   // console.log(image)
-
-//   doc.addImage(image, 30, 30, 140, 35);
-
-//   doc.setFontSize(22).text(`Created by SM.Devware.`, 105, 285);
-//   doc.setFontSize(34);
-//   doc.text(`Name: ${item?.customer_details.customer_name}`, 22, 100);
-//   doc.text(`Phone: ${item?.customer_details.phone_number}`, 22, 112);
-
-//   doc.text(`Hotline: +88 09647323700`, 30, 238);
-//   doc.text(`Address: Nouhata, Paba, Rajshahi.`, 9, 250);
-
-//   doc.text(`Address: `, 22, 124);
-//   doc.setFontSize(26).text(item?.customer_details.customer_address, 72, 124, {
-//     maxWidth: 140,
-//     align: "left",
-//   });
-//   // doc.text(`Note: `, 22, 136);
-//   // doc.setFontSize(28).text(`Some Note`, 54, 136);
-//   doc.setFontSize(36).text(`${item?.courier?.consignment_id}`, 70, 74);
-//   // doc.setFontSize(36).text(`${item?.id}`, 120, 88);
-
-//   doc.setFont(undefined, "bold");
-//   doc.setFontSize(26).text(`(WGT: ${item?.weight}kg)`, 6, 74);
-//   doc.setFontSize(36).text("Jannat Fashion", 38, 225);
-//   doc
-//     .setFontSize(40)
-//     .text(
-//       `${item?.customer_details.delivery_type ? "HOME" : "POINT"} DELIVERY`,
-//       42,
-//       180
-//     );
-//   doc
-//     .setFontSize(40)
-//     .text(`COD: ${item?.customer_details.salePrice}/-`, 65, 195);
-//   doc.setFontSize(36).text("Receiver:", 15, 88);
-//   // doc.setFontSize(24).text(`(WGT:${item?.weight}kg)`, 12, 74);
-//   doc.setFontSize(36).text(`${item?.id}`, 120, 88);
-//   doc.setFontSize(36).text("Sender:", 15, 210);
-//   doc.setFontSize(55).text("Jannat Fashion", 6, 25);
-//   doc.setFontSize(36).text("Thanks for being with us.", 24, 270);
-
-//   // doc.save(invoiceNo);
-//   doc.autoPrint();
-//   //This is a key for printing
-//   doc.output("dataurlnewwindow");
-// };
-
-// utils/orderUtils.js
 export const updateOrderStatus = async (db, orderId, orderData, newStatus) => {
   try {
     await db
-      .collection("placeOrder")
+      .collection("orders")
       .doc(orderId)
       .set(
         {
           ...orderData,
           status: newStatus,
-          timestamp: orderData.timestamp,
+          updated_at: new Date().toISOString(),
         },
         { merge: true }
       );

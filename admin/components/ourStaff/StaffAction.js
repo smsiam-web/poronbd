@@ -55,28 +55,38 @@ const SingleStaff = () => {
 
   // save order details on firebase database
   const updateStaffHandler = async (staff, values, staff_id) => {
-    await db.collection("users").doc(staff?.uid).set({
-      authKey: staff.authKey,
-      email: staff.email,
-      image: staff.image,
-      name: values.staff_name,
-      phone: values.staff_contact,
-      staff_id,
-      staff_role: values.staff_role,
-      uid: staff.uid,
-      timestamp: staff.timestamp,
-    });
-    await db.collection("ourStaff").doc(staff_id).set({
-      authKey: staff.authKey,
-      email: staff.email,
-      image: staff.image,
-      name: values.staff_name,
-      phone: values.staff_contact,
-      staff_id,
-      staff_role: values.staff_role,
-      uid: staff.uid,
-      timestamp: staff.timestamp,
-    });
+    await db
+      .collection("users")
+      .doc(staff?.uid)
+      .set({
+        authKey: user.authKey,
+        email: staff.email,
+        image: staff.image,
+        name: values.staff_name,
+        phone: values.staff_contact,
+        staff_id,
+        staff_role: values.staff_role,
+        uid: staff.uid,
+        created_at: staff?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        updated_user: user?.name,
+      });
+    // await db
+    //   .collection("ourStaff")
+    //   .doc(staff_id)
+    //   .set({
+    //     authKey: user.authKey,
+    //     email: staff.email,
+    //     image: staff.image,
+    //     name: values.staff_name,
+    //     phone: values.staff_contact,
+    //     staff_id,
+    //     staff_role: values.staff_role,
+    //     uid: staff.uid,
+    //     created_at: staff?.created_at || new Date().toISOString(),
+    //     updated_at: new Date().toISOString(),
+    //     updated_user: user?.name,
+    //   });
   };
 
   return (
@@ -114,7 +124,7 @@ const SingleStaff = () => {
               <div>
                 <span>Staff Role</span>
                 <FormDropdown
-                disabled = {staff?.staff_role === "HR"}
+                  disabled={staff?.staff_role === "HR"}
                   name="staff_role"
                   placeholder="Staff Role"
                   items={ROLE}

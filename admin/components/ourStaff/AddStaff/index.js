@@ -12,7 +12,6 @@ import { notifications } from "@mantine/notifications";
 const validationSchema = Yup.object().shape({
   staff_name: Yup.string().required().label("Staff name"),
   staff_email: Yup.string().email().required().label("Email"),
-  // staff_password: Yup.string().required().label("Password > 8 chracter"),
   staff_contact: Yup.string().required().label("Phone number"),
   staff_role: Yup.string().required().label("Staff role"),
 });
@@ -56,7 +55,7 @@ const AddStaff = ({ onClick }) => {
   // save order details on firebase database
   const placeStaffHandler = async (i, values, staff_id) => {
     await db
-      .collection("ourStaff")
+      .collection("users")
       .doc(staff_id)
       .set(
         {
@@ -66,7 +65,7 @@ const AddStaff = ({ onClick }) => {
           phone: values.staff_contact,
           staff_role: values.staff_role,
           authKey: key,
-          timestamp,
+          created_at: new Date().toISOString(),
         },
         { merge: true }
       );
@@ -84,7 +83,8 @@ const AddStaff = ({ onClick }) => {
           phone: values.staff_contact,
           staff_role: values.staff_role,
           authKey: key,
-          timestamp,
+          created_at: i?.created_at || new Date().toISOString(),
+          updated_at:  new Date().toISOString(),
         },
         { merge: true }
       );
@@ -124,7 +124,6 @@ const AddStaff = ({ onClick }) => {
           initialValues={{
             staff_name: "",
             staff_email: "",
-            // staff_password: "",
             staff_contact: "",
             staff_role: "",
           }}

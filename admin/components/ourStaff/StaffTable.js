@@ -11,7 +11,7 @@ import { selectStaff } from "@/app/redux/slices/staffSlice";
 import * as Yup from "yup";
 import { db } from "@/app/utils/firebase";
 import { notifications } from "@mantine/notifications";
-import { TimeStampToDate } from "@/admin/utils/helpers";
+import { formatDates, TimeStampToDate } from "@/admin/utils/helpers";
 import { selectUser } from "@/app/redux/slices/authSlice";
 
 const validationSchema = Yup.object().shape({
@@ -37,7 +37,8 @@ const StaffTable = ({ onClick }) => {
 
   // Confirmation staff from firebase
   const ConfirmationDelete = async (item) => {
-    if(item?.staff_role === "HR") return
+    console.log(item);
+    if(item?.email === "smsiam696@gmail.com") return
     open();
     setFilterStaff(item);
   };
@@ -46,6 +47,20 @@ const StaffTable = ({ onClick }) => {
   const DeleteStaff = async (item) => {
     await db
       .collection("users")
+      .doc(item.uid)
+      .delete()
+      .then(() => {
+        notifications.show({
+          title: "Delete successfully",
+          message: `${item.name}, ID: ${item.staff_id}`,
+          color: "orange",
+        });
+      })
+      .catch((error) => {
+        console.error("Error removing document: ", error);
+      });
+    await db
+      .collection("ourStaff")
       .doc(item.id)
       .delete()
       .then(() => {
@@ -147,13 +162,13 @@ const StaffTable = ({ onClick }) => {
                     </td>
                     <td className="px-4 py-3">
                       <span className="text-sm font-semibold uppercase">
-                        {TimeStampToDate(item.timestamp)}
+                        {formatDates(item.created_at)}
                       </span>
                     </td>
 
                     <td className="px-4 py-3">
                       <span className="text-sm  bg-green-100 text-green-500 font-medium px-2 py-1 rounded-full">
-                        {item.staff_role}
+                        {item.staff_role || "new"}
                       </span>
                     </td>
 

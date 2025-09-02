@@ -15,6 +15,7 @@ import NotFound from "../shared/NotFound";
 import { AiOutlinePrinter } from "react-icons/ai";
 import { selectUser } from "@/app/redux/slices/authSlice";
 import {
+  formatDates,
   generateStick,
   invoiceGenerate,
   updateOrderStatus,
@@ -28,7 +29,7 @@ const AllOrder = () => {
   const [loading, setLoading] = useState(false);
   const [filterOrder, setFilterOrder] = useState(null);
   const dispatch = useDispatch();
-  const [orders, setOrders] = useState(useSelector(selectOrder));
+  const [orders, setOrders] = useState([]);
   const [page, setPagee] = useState(1);
   const [opened, setOpened] = useState(false);
   const order = useSelector(selectOrder);
@@ -134,6 +135,7 @@ const AllOrder = () => {
           });
         });
         dispatch(updateOrder(order));
+        setOrders(order);
         setLoading(false);
       });
     return () => {
@@ -249,8 +251,6 @@ const AllOrder = () => {
                   <th className="px-4 py-3 ">Delivery Type</th>
                   <th className="px-4 py-3 ">DISCOUNT</th>
                   <th className="px-4 py-3 ">Amount</th>
-                  <th className="px-4 py-3 ">WGT</th>
-
                   <th className="px-4 py-3 text-center ">status</th>
                   <th
                     className={`px-4 py-3 ${
@@ -290,40 +290,36 @@ const AllOrder = () => {
                           >
                             <td className="px-4 py-3 font-bold">
                               {/* <Link href={`/place-order/id=${item.id}`}> */}
-                              <span className="text-sm">#{item.id}</span>
+                              <span className="text-sm">#{item.orderID}</span>
                               {/* </Link> */}
                             </td>
                             <td className="px-4 py-3 font-bold">
                               {/* <Link href={`/place-order/id=${item.id}`}> */}
                               <span className="text-sm">
-                                {item?.customer_details?.courier
-                                  ? item?.customer_details?.courier
-                                  : "null"}
+                                {item?.fulfillment?.courier || "null"}
                               </span>
                               {/* </Link> */}
                             </td>
                             <td className="px-4 py-3 font-bold">
                               {/* <Link href={`/place-order/id=${item.id}`}> */}
                               <span className="text-sm">
-                                {item?.courier?.consignment_id
-                                  ? item?.courier?.consignment_id
-                                  : "null"}
+                                {item?.fulfillment?.consignment_id || "null"}
                               </span>
                               {/* </Link> */}
                             </td>
 
                             <td className="px-4 py-3">
                               <span className="text-sm ">
-                                {item.customer_details?.customer_name}
+                                {item.customer?.name}
                               </span>
                             </td>
 
                             <td className="px-4 py-3">
                               <span className="text-sm font-semibold ">
                                 <a
-                                  href={`tel:+88${item.customer_details?.phone_number}`}
+                                  href={`tel:+88${item.customer?.phone}`}
                                 >
-                                  {item.customer_details?.phone_number}
+                                  {item.customer?.phone}
                                 </a>
                               </span>
                             </td>
@@ -342,20 +338,16 @@ const AllOrder = () => {
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm font-bold">
-                                -{item?.discount}tk
+                                -{item?.totals?.dicount}tk
                               </span>
                             </td>
 
                             <td className="px-4 py-3">
                               <span className="text-sm  font-bold">
-                                {item.customer_details?.salePrice}tk
+                                {item.totals?.grand}tk
                               </span>
                             </td>
-                            <td className="px-4 py-3">
-                              <span className="text-sm  font-semibold">
-                                {item.weight}Kg
-                              </span>
-                            </td>
+                            
 
                             <td className="px-4 py-3">
                               <span className="font-serif">
@@ -449,24 +441,22 @@ const AllOrder = () => {
                                     "text-orange-500 bg-orange-100"
                                   }  inline-flex px-2 text-xs capitalize font-medium leading-5 rounded-full`}
                                 >
-                                  {item.customer_details?.order_from || "null"}
+                                  {item?.meta?.source || "null"}
                                 </span>
                               </span>
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm font-semibold">
-                                {item.date}
+                                {formatDates(item?.created_at)}
                               </span>
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm font-semibold">
-                                {item.placeBy?.user || item?.placeBy}
+                                {item?.created_user || "null"}
                               </span>
                             </td>
                             <td className="px-4 py-3">
-                              <Link
-                                href={`/orders/invoice/id=${item.id}`}
-                              >
+                              <Link href={`/orders/invoice/id=${item.id}`}>
                                 <Tooltip label="Invoice" color="blue" withArrow>
                                   <span className="text-sub-title flex items-center justify-center font-semibold cursor-pointer hover:text-blue-400">
                                     <HiOutlineDocumentDownload size={18} />
@@ -475,7 +465,7 @@ const AllOrder = () => {
                               </Link>
                             </td>
 
-                            {(item.status === "Pending" &&
+                            {(item.status === "pending" &&
                               user.staff_role === "Sales Executive") ||
                             user?.staff_role === "Sales Manager" ? (
                               <td className="px-4 py-3 ">

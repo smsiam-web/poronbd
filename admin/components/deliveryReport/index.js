@@ -137,7 +137,6 @@ const DeliveryReports = () => {
             // timestamp: doc.data().timestamp?.toDate().getTime(),
           });
         });
-        // dispatch(updateOrder(order));
         setDispatchData(dispatch);
         setLoading(false);
       });

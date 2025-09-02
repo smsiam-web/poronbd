@@ -28,7 +28,7 @@ export default function App({ Component, pageProps }: AppProps) {
   };
 
     // Default if route not in map
-const pageTitle = `Poron || ${routeTitles[router.pathname] || "Loading"}`;
+const pageTitle = `Poron || ${routeTitles[router.pathname] || "E-commerce"}`;
 
   return (
     <Provider store={store}>

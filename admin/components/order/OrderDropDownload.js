@@ -167,12 +167,12 @@ const OrderDropDownload = () => {
                 onChange={(e) => selectStatus(e)}
               >
                 <option>Status Change to</option>
-                <option value="Pending">Change status to Pending</option>
-                <option value="Processing">Change status to Processing</option>
-                <option value="Shipped">Change status to Shipped</option>
-                <option value="Delivered">Change status to Delivered</option>
-                <option value="Hold">Change status to Hold</option>
-                <option value="Cancelled">Change status to Cancelled</option>
+                <option value="pending">Change status to Pending</option>
+                <option value="processing">Change status to Processing</option>
+                <option value="shipped">Change status to Shipped</option>
+                <option value="delivered">Change status to Delivered</option>
+                <option value="hold">Change status to Hold</option>
+                <option value="cancelled">Change status to Cancelled</option>
               </select>
               <Button
                 onClick={() => ChangeToStatus()}

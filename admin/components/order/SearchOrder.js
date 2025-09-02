@@ -255,7 +255,7 @@ const SearchOrder = ({ onClick }) => {
 
   const filter = async (id) => {
     await db
-      .collection("placeOrder")
+      .collection("orders")
       .doc(id)
       .get()
       .then((doc) => {
@@ -279,14 +279,14 @@ const SearchOrder = ({ onClick }) => {
   }, []);
 
   useEffect(() => {
-    limits ? setLimit(600) : setLimit(30);
+    limits ? setLimit(400) : setLimit(30);
   }, [limits]);
 
   // Get order from firebase database
   useEffect(() => {
     const unSub = db
-      .collection("placeOrder")
-      .orderBy("timestamp", "desc")
+      .collection("orders")
+      .orderBy("created_at", "desc")
       .limit(limit)
       .onSnapshot((snap) => {
         const order = [];
@@ -536,12 +536,12 @@ const SearchOrder = ({ onClick }) => {
                 onChange={(e) => statusChange(e)}
               >
                 <option>Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Processing">Processing</option>
-                <option value="Shipped">Shipped</option>
-                <option value="Delivered">Delivered</option>
-                <option value="Hold">Hold</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="hold">Hold</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
             {/* <div className="flex-grow-0 md:flex-grow lg:flex-grow xl:flex-grow">
