@@ -72,10 +72,10 @@ const AllOrder = () => {
   };
   // Change Status from print Action and check print Status
   const statusUpdate = async (item) => {
-    item.status === "Pending" && invoiceGenerate(item);
+    item.status === "pending" && invoiceGenerate(item);
 
-    item.status === "Pending"
-      ? updateStatus(item, "Processing", item?.id)
+    item.status === "pending"
+      ? updateStatus(item, "processing", item?.id)
       : toggleOpen;
     setFilterOrder(item);
     //   console.log(item);
@@ -83,11 +83,11 @@ const AllOrder = () => {
   // Change Status from print Action and check print Status
   const stickerStatus = async (item) => {
     setID(item?.sfc?.consignment_id);
-    item.status === "Processing"
-      ? updateStatus(item, "Shipped", item?.id)
+    item.status === "processing"
+      ? updateStatus(item, "shipped", item?.id)
       : toggleOpen;
     setFilterOrder(item);
-    item.status === "Processing" && generateStick(item, inputRef?.current.src);
+    item.status === "processing" && generateStick(item, inputRef?.current.src);
   };
   const deleteItem = async (item) => {
     setFilterOrder(item);
@@ -161,7 +161,7 @@ const AllOrder = () => {
   const DeleteOrder = async (item) => {
     toggleOpen();
     await db
-      .collection("placeOrder")
+      .collection("orders")
       .doc(item.id)
       .delete()
       .then(() => {
@@ -301,11 +301,15 @@ const AllOrder = () => {
                               {/* </Link> */}
                             </td>
                             <td className="px-4 py-3 font-bold">
-                              {/* <Link href={`/place-order/id=${item.id}`}> */}
-                              <span className="text-sm">
-                                {item?.fulfillment?.consignment_id || "null"}
-                              </span>
-                              {/* </Link> */}
+                              <Link
+                                href={`https://merchant.pathao.com/courier/orders/${item?.fulfillment?.consignment_id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <span className="text-sm">
+                                  {item?.fulfillment?.consignment_id || "null"}
+                                </span>
+                              </Link>
                             </td>
 
                             <td className="px-4 py-3">
@@ -316,9 +320,7 @@ const AllOrder = () => {
 
                             <td className="px-4 py-3">
                               <span className="text-sm font-semibold ">
-                                <a
-                                  href={`tel:+88${item.customer?.phone}`}
-                                >
+                                <a href={`tel:+88${item.customer?.phone}`}>
                                   {item.customer?.phone}
                                 </a>
                               </span>
@@ -347,7 +349,6 @@ const AllOrder = () => {
                                 {item.totals?.grand}tk
                               </span>
                             </td>
-                            
 
                             <td className="px-4 py-3">
                               <span className="font-serif">
@@ -401,23 +402,23 @@ const AllOrder = () => {
                                   {item.status}
                                 </option>
 
-                                <option value="Pending">Pending</option>
+                                <option value="pending">Pending</option>
                                 {user.staff_role !== "Sales Manager" && (
-                                  <option value="Processing">Processing</option>
+                                  <option value="processing">Processing</option>
                                 )}
                                 {user.staff_role !== "Sales Manager" && (
-                                  <option value="Shipped">Shipped</option>
+                                  <option value="shipped">Shipped</option>
                                 )}
                                 {user.staff_role !== "Sales Manager" && (
-                                  <option value="Delivered">Delivered</option>
-                                )}
-
-                                <option value="Hold">Hold</option>
-                                {user.staff_role !== "Sales Manager" && (
-                                  <option value="Returned">Returned</option>
+                                  <option value="delivered">Delivered</option>
                                 )}
 
-                                <option value="Cancelled">Cancelled</option>
+                                <option value="hold">Hold</option>
+                                {user.staff_role !== "Sales Manager" && (
+                                  <option value="returned">Returned</option>
+                                )}
+
+                                <option value="cancelled">Cancelled</option>
                               </select>
                             </td>
                             <td className="px-4 py-3">

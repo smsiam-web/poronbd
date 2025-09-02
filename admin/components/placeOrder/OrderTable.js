@@ -80,11 +80,11 @@ const OrderTable = () => {
   // Change Status from print Action and check print Status
   const stickerStatus = async (item) => {
     await setID(item?.courier?.consignment_id);
-    item.status === "Processing" 
-      ? updateStatus(item, "Shipped", item?.id)
+    item.status === "processing" 
+      ? updateStatus(item, "shipped", item?.id)
       : toggleOpen;
     setFilterOrder(item);
-    item.status === "Processing" && generateStick(item, inputRef?.current.src);
+    item.status === "processing" && generateStick(item);
     setID(null);
   };
   console.log(ID);
@@ -382,23 +382,23 @@ const OrderTable = () => {
                                   {item.status}
                                 </option>
 
-                                <option value="Pending">Pending</option>
+                                <option value="pending">Pending</option>
                                 {user.staff_role !== "Sales Manager" && (
-                                  <option value="Processing">Processing</option>
+                                  <option value="processing">Processing</option>
                                 )}
                                 {user.staff_role !== "Sales Manager" && (
-                                  <option value="Shipped">Shipped</option>
+                                  <option value="shipped">Shipped</option>
                                 )}
                                 {user.staff_role !== "Sales Manager" && (
-                                  <option value="Delivered">Delivered</option>
+                                  <option value="delivered">Delivered</option>
                                 )}
 
                                 <option value="Hold">Hold</option>
                                 {user.staff_role !== "Sales Manager" && (
-                                  <option value="Returned">Returned</option>
+                                  <option value="returned">Returned</option>
                                 )}
 
-                                <option value="Cancelled">Cancelled</option>
+                                <option value="cancelled">Cancelled</option>
                               </select>
                             </td>
                             <td className="px-4 py-3">

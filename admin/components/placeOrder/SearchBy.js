@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   ToDateAndTime,
   daysInMonth,
+  formatDates,
   generateStick,
   invoiceGenerate,
   updateOrderStatus,
@@ -44,7 +45,7 @@ const SearchBy = ({ onClick }) => {
   }, [opened]);
 
   const resetFilter = () => {
-    setCurrentValue("RA014");
+    setCurrentValue("PR011");
     setFilterOrder(null);
     setBarcodeImage("");
   };
@@ -67,7 +68,7 @@ const SearchBy = ({ onClick }) => {
   };
 
   const { inputRef } = useBarcode({
-    value: `${filterOrder?.sfc?.consignment_id}`,
+    value: `${filterOrder?.fulfillment?.consignment_id}`,
     options: {
       background: "#FFFFFF",
       displayValue: false,
@@ -78,19 +79,19 @@ const SearchBy = ({ onClick }) => {
 
   // Change Status from print Action and check print Status
   const stickerStatus = async (item) => {
-    item.status === "Processing"
-      ? await updateStatus(item, "Shipped")
+    item.status === "processing"
+      ? await updateStatus(item, "shipped")
       : toggleOpen;
-    item.status === "Processing" && generateStick(item, barcodeImage);
+    item.status === "processing" && generateStick(item);
     resetFilter();
   };
 
   // Change Status from print Action and check print Status
   const getInvoice = async (item) => {
-    item.status === "Pending" && invoiceGenerate(item);
+    item.status === "pending" && invoiceGenerate(item);
 
-    item.status === "Pending"
-      ? updateStatus(item, "Processing", item?.id)
+    item.status === "pending"
+      ? updateStatus(item, "processing", item?.id)
       : toggleOpen;
     close();
     resetFilter();
@@ -170,7 +171,7 @@ const SearchBy = ({ onClick }) => {
 
   useEffect(() => {
     const value = currentValue?.toUpperCase();
-    if (value?.split("0")[0] === "RA" && value.length === 9) {
+    if (value?.split("0")[0] === "PR" && value.length === 9) {
       filter(value);
     }
   }, [currentValue]);
@@ -227,7 +228,7 @@ const SearchBy = ({ onClick }) => {
 
   const filter = async (id) => {
     await db
-      .collection("placeOrder")
+      .collection("orders")
       .doc(id)
       .get()
       .then((doc) => {
@@ -267,26 +268,26 @@ const SearchBy = ({ onClick }) => {
                     {filterOrder.status}
                   </option>
 
-                  <option value="Pending">Pending</option>
+                  <option value="pending">Pending</option>
                   {user.staff_role !== "Sales Manager" && (
-                    <option value="Processing">Processing</option>
+                    <option value="processing">Processing</option>
                   )}
                   {user.staff_role !== "Sales Manager" && (
-                    <option value="Shipped">Shipped</option>
+                    <option value="shipped">Shipped</option>
                   )}
                   {user.staff_role !== "Sales Manager" && (
-                    <option value="Delivered">Delivered</option>
-                  )}
-
-                  <option value="Hold">Hold</option>
-                  {user.staff_role !== "Sales Manager" && (
-                    <option value="Returned">Returned</option>
+                    <option value="delivered">Delivered</option>
                   )}
 
-                  <option value="Cancelled">Cancelled</option>
+                  <option value="hold">Hold</option>
+                  {user.staff_role !== "Sales Manager" && (
+                    <option value="returned">Returned</option>
+                  )}
+
+                  <option value="cancelled">Cancelled</option>
                 </select>
               </div>
-              {((filterOrder.status === "Pending" &&
+              {((filterOrder.status === "pending" &&
                 user.staff_role === "Sales Executive") ||
                 user.staff_role === "HR" ||
                 user?.staff_role === "Sales Manager" ||
@@ -307,64 +308,64 @@ const SearchBy = ({ onClick }) => {
             </div>
             <div>
               <h1 className="text-center text-2xl font-semibold pb-1">
-                ID #{filterOrder.id} ({filterOrder.status})
+                ID #{filterOrder.orderID} ({filterOrder.status})
               </h1>
               <div className="hidden">
                 <BarcodeComponent
-                  value={filterOrder?.sfc?.consignment_id}
+                  value={filterOrder?.fulfillment?.consignment_id}
                   onImageReady={handleImageReady}
                 />
               </div>
               <h1 className="text-center text-2xl font-semibold border-b pb-3">
-                SFC #{filterOrder?.sfc?.consignment_id}
+                SFC #{filterOrder?.fulfillment?.consignment_id}
               </h1>
             </div>
 
             <div className="pt-3 flex justify-between w-full">
               <div className="w-7/12">
                 <h2 className="text-lg font-semibold">
-                  {filterOrder.customer_details.customer_name}
+                  {filterOrder?.customer.name}
                 </h2>
                 <h2>
-                  Address: {filterOrder.customer_details.customer_address}
+                  Address: {filterOrder?.shipping_address.street}
                 </h2>
                 <div className="flex text-center items-center gap-2">
-                  <h2>Contact: {filterOrder.customer_details.phone_number}</h2>
+                  <h2>Contact: {filterOrder?.customer.phone}</h2>
                   <Link
                     className="bg-blue-400 inline-block  items-center px-2 py-1 rounded-md cursor-pointer hover:bg-blue-500 text-sm text-white font-medium hover:shadow-lg transition-all duration-300"
-                    href={`tel:+88${filterOrder.customer_details?.phone_number}`}
+                    href={`tel:+88${filterOrder?.customer?.phone}`}
                   >
                     <IoCall size={14} />
                   </Link>
                 </div>
                 <h2 className="text-slate-600">
-                  Note: {filterOrder?.customer_details?.note || "N/A"}
+                  {`[Note: ${filterOrder?.meta?.notes || "N/A"}]`}
                 </h2>
               </div>
               <div className="w-4/12 text-end">
-                <h3>{ToDateAndTime(filterOrder.timestamp)}</h3>
+                <h3>{formatDates(filterOrder?.created_at)}</h3>
                 <h3>
                   Order type:{" "}
-                  {filterOrder.customer_details?.order_from || "N/A"}
+                  {filterOrder?.meta?.source || "N/A"}
                 </h3>
                 <h3>
                   Received by:{" "}
-                  {filterOrder.customer_details?.received_by || "N/A"}
+                  {filterOrder?.created_user || "N/A"}
                 </h3>
                 <h3>
-                  Entry by: {filterOrder?.placeBy?.user || filterOrder.placeBy}
+                  Entry by: {filterOrder?.created_user || "N/A"}
                 </h3>
-                {filterOrder?.updateBy && (
-                  <h3>Updated by: {filterOrder?.updateBy?.user || "N/A"}</h3>
+                {filterOrder?.updated_user && (
+                  <h3>Updated by: {filterOrder?.updated_user || "N/A"}</h3>
                 )}
 
-                <h3>Weight: {filterOrder.weight}kg</h3>
+              <h3>Qty: {filterOrder.quantity || 0}</h3>
               </div>
             </div>
             <h1 className="text-2xl">Order:</h1>
             <div className="border-t my-2">
               {filterOrder &&
-                filterOrder.order.map((item, i) => (
+                filterOrder.items.map((item, i) => (
                   <div key={i}>
                     <div className="flex justify-between py-1 md:py-1 border-b">
                       <div>
@@ -372,7 +373,7 @@ const SearchBy = ({ onClick }) => {
                           className="text-sm sm:text-xl text-title font-mono"
                           id={`item_0${++i}`}
                         >
-                          {item.title}
+                          {item?.title}
                         </h2>
                       </div>
                       <div className="flex justify-between w-7/12">
@@ -380,19 +381,19 @@ const SearchBy = ({ onClick }) => {
                           className="text-sm sm:text-xl text-title font-mono"
                           id={`item_0${i}_quantity`}
                         >
-                          {item.quantity}kg
+                          {item?.quantity}{item?.unit}
                         </span>
                         <span
                           className="text-sm sm:text-xl text-title font-mono"
                           id={`item_0${i}_price`}
                         >
-                          {item.price}
+                          {item?.price}
                         </span>
                         <span
                           className="text-sm sm:text-xl text-title font-mono"
                           id={`item_0${i}_total_price`}
                         >
-                          {item.total_price}/-
+                          {item?.line_total}/-
                         </span>
                       </div>
                     </div>
@@ -402,7 +403,7 @@ const SearchBy = ({ onClick }) => {
             <div className="flex justify-between mb-10 gap-5">
               <div className=" ">
                 <h2 className="text-slate-600 ">
-                  [Note: {filterOrder?.customer_details?.invoice_Note || "N/A"}]
+                  [Note: {filterOrder?.notes || "N/A"}]
                 </h2>
               </div>
               <div className="text-sm flex ">
@@ -419,16 +420,16 @@ const SearchBy = ({ onClick }) => {
                   <h2>:</h2>
                 </div>
                 <div className="text-sm sm:text-xl text-title font-semibold text-right">
-                  <h2>{filterOrder?.totalPrice}/-</h2>
-                  <h2>{filterOrder?.deliveryCrg}/-</h2>
-                  <h2>-{filterOrder?.discount}/-</h2>
-                  <h2>{filterOrder?.customer_details.salePrice}/-</h2>
+                  <h2>{filterOrder?.totals?.items}/-</h2>
+                  <h2>{filterOrder?.totals?.shipping}/-</h2>
+                  <h2>-{filterOrder?.totals?.discount}/-</h2>
+                  <h2>{filterOrder?.totals?.grand}/-</h2>
                 </div>
               </div>
             </div>
             <div className="flex gap-4 justify-end">
               {user.staff_role === "HR" &&
-                filterOrder.status === "Processing" && (
+                filterOrder.status === "processing" && (
                   <Tooltip label="Sticker" color="green" withArrow>
                     <button
                       title="Sticker"
@@ -440,7 +441,7 @@ const SearchBy = ({ onClick }) => {
                   </Tooltip>
                 )}
               {(user.staff_role === "HR" || user.staff_role === "Admin") &&
-                filterOrder.status === "Pending" && (
+                filterOrder.status === "pending" && (
                   <Tooltip label="Invoice" color="blue" withArrow>
                     <button
                       title="Invoice"

@@ -321,10 +321,57 @@ export const invoiceGenerate = (item) => {
     .setFontSize(18)
     .text(`${item?.totals?.grand.toString()}.00/-`, 161, 255.5);
 
-  // doc.save(item?.id);
+  // 🔥 Enable PDF auto-print (adds OpenAction in the PDF)
   doc.autoPrint();
-  //This is a key for printing
-  doc.output("dataurlnewwindow");
+
+  const fileName = `${
+    item?.orderID || item?.fulfillment?.consignment_id || "order"
+  }.pdf`;
+
+  // Make a Blob + URL
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+
+  // ✅ Preview in a new tab + try to auto-print as soon as it loads
+  const w = window.open("", "_blank");
+  if (w) {
+    w.document.write(`
+    <html>
+      <head><title>${fileName}</title></head>
+      <body style="margin:0">
+        <iframe id="pdf" src="${url}" style="border:0;width:100%;height:100vh;"></iframe>
+        <script>
+          const frame = document.getElementById('pdf');
+          frame.addEventListener('load', () => {
+            try {
+              // Chrome সাধারণত OpenAction (autoPrint) রেস্পেক্ট করে।
+              // তবু সেফটির জন্য প্রোগ্রাম্যাটিক প্রিন্টও ট্রাই করি:
+              frame.contentWindow && frame.contentWindow.focus();
+              frame.contentWindow && frame.contentWindow.print();
+            } catch (e) {}
+          });
+          // ট্যাব বন্ধ হলে URL revoke
+          window.addEventListener('beforeunload', () => URL.revokeObjectURL('${url}'));
+        <\/script>
+      </body>
+    </html>
+  `);
+    w.document.close();
+  } else {
+    // popup blocked হলে fallback: শুধু ওপেন করুন
+    window.open(url, "_blank");
+  }
+
+  // 🟦 (Optional) আলাদা বাটনে/অ্যাকশনে কাস্টম ফাইলনেম ডাউনলোড
+  // একই blob URL ইউজ করলে খুব তাড়াতাড়ি revoke করবেন না
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+
+  // ⚠️ খুব তাড়াতাড়ি revoke করলে নতুন ট্যাব লোড হতে নাও পারে। একটু দেরিতে revoke করুন:
+  setTimeout(() => URL.revokeObjectURL(url), 60000); // 60s পরে নিরাপদে রিভোক
+
 };
 function barcodeDataURL(value, options = {}) {
   const canvas = document.createElement("canvas");

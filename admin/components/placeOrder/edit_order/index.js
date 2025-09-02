@@ -31,7 +31,9 @@ const normalizeOrder = (values, prev = {}) => {
       ...it,
       currency: (it.currency || v.currency || "BDT").toUpperCase(),
       line_total:
-        typeof it.line_total === "number" ? it.line_total : +(price * qty).toFixed(2),
+        typeof it.line_total === "number"
+          ? it.line_total
+          : +(price * qty).toFixed(2),
     };
   });
 
@@ -203,8 +205,18 @@ const EditOrder = ({ onClick }) => {
   const updateOrder = async (values) => {
     try {
       setSaving(true);
-      const normalized = normalizeOrder(values, { created_at: initial?.created_at });
-      await orderValidationSchemaCOD.validate(normalized, { abortEarly: false });
+      const normalized = normalizeOrder(
+        values,
+        {
+          created_at: initial?.created_at,
+          updated_user: user?.name || "null",
+          updated_at: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      await orderValidationSchemaCOD.validate(normalized, {
+        abortEarly: false,
+      });
 
       if (!orderId) throw new Error("Missing order id");
 
@@ -225,7 +237,10 @@ const EditOrder = ({ onClick }) => {
           message: "Please review the highlighted fields.",
           color: "orange",
         });
-        console.error("ValidationError:", err.inner?.map((e) => ({ path: e.path, message: e.message })));
+        console.error(
+          "ValidationError:",
+          err.inner?.map((e) => ({ path: e.path, message: e.message }))
+        );
       } else {
         notifications.show({
           title: "Save failed",
@@ -307,4 +322,3 @@ const EditOrder = ({ onClick }) => {
 };
 
 export default EditOrder;
-
