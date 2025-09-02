@@ -62,9 +62,9 @@ const OrderTable = () => {
   };
   // Change Status from print Action and check print Status
   const statusUpdate = async (item) => {
-    item.status === "Pending" && invoiceGenerate(item);
+    item.status === "pending" && invoiceGenerate(item);
 
-    item.status === "Pending" ? updateStatus(item, "Processing") : toggleOpen;
+    item.status === "pending" ? updateStatus(item, "processing") : toggleOpen;
     setFilterOrder(item);
     //   console.log(item);
   };

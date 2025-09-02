@@ -190,6 +190,7 @@ export const daysInMonth = (month, year) => {
 };
 
 export const invoiceGenerate = (item) => {
+  const date = formatDates(item?.created_at)
   const doc = new jsPDF();
 
   let item_01 = "",
@@ -217,38 +218,38 @@ export const invoiceGenerate = (item) => {
     item_06_price = "",
     item_06_total_price = "";
 
-  item.order.map((e, i) => {
+  item.items.map((e, i) => {
     i++;
     if (i === 1) {
       item_01 = e.title || "";
       item_01_quantity = `${e.quantity}`;
-      item_01_price = [e.price];
-      item_01_total_price = `${e.total_price}/-`;
+      item_01_price = `${e.price}`;
+      item_01_total_price = `${e.line_total}/-`;
     } else if (i === 2) {
       item_02 = e.title || "";
       item_02_quantity = `${e.quantity}`;
-      item_02_price = [e.price];
-      item_02_total_price = `${e.total_price}/-`;
+      item_02_price = `${e.price}`;
+      item_02_total_price = `${e.line_total}/-`;
     } else if (i === 3) {
       item_03 = e.title || "";
       item_03_quantity = `${e.quantity}`;
-      item_03_price = [e.price];
-      item_03_total_price = `${e.total_price}/-`;
+      item_03_price = `${e.price}`;
+      item_03_total_price = `${e.line_total}/-`;
     } else if (i === 4) {
       item_04 = e.title || "";
       item_04_quantity = `${e.quantity}`;
-      item_04_price = [e.price];
-      item_04_total_price = `${e.total_price}/-`;
+      item_04_price = `${e.price}`;
+      item_04_total_price = `${e.line_total}/-`;
     } else if (i === 5) {
       item_05 = e.title || "";
       item_05_quantity = `${e.quantity}`;
-      item_05_price = [e.price];
-      item_05_total_price = `${e.total_price}/-`;
+      item_05_price = `${e.price}`;
+      item_05_total_price = `${e.line_total}/-`;
     } else if (i === 6) {
       item_06 = e.title || "";
       item_06_quantity = `${e.quantity}`;
-      item_06_price = [e.price];
-      item_06_total_price = `${e.total_price}/-`;
+      item_06_price = `${e.price}`;
+      item_06_total_price = `${e.line_total}/-`;
     }
   });
 
@@ -257,9 +258,9 @@ export const invoiceGenerate = (item) => {
   // doc.setFont("LiAnis");
   doc.setFont("SolaimanLipi");
   doc.addImage("/invoice/invoice.jpg", 0, 0, 210, 297);
-  doc.text(item?.status, 91, 77);
-  doc.text(item?.customer_details.customer_name, 33, 91.4);
-  doc.text(item?.customer_details.phone_number, 33.3, 99);
+  doc.text(item?.fulfillment?.order_status, 91, 77);
+  doc.text(item?.customer?.name, 33, 91.4);
+  doc.text(item?.customer?.phone, 33.3, 99);
 
   doc.text(item_01, 30, 139.6);
   doc.text(item_01_quantity, 116, 139.6);
@@ -293,27 +294,26 @@ export const invoiceGenerate = (item) => {
 
   doc
     .setFontSize(12)
-    .text(`[Note: ${item?.customer_details?.invoice_Note || ""}]`, 8, 218.2, {
+    .text(`[Note: ${item?.meta?.notes || ""}]`, 8, 218.2, {
       maxWidth: 120,
       align: "left",
     });
-  doc.text(`${item?.totalPrice}/-`.toString(), 161, 225.5);
-  doc.text("Home", 182, 233.8);
-  doc.text(`${item?.deliveryCrg}/-`, 161, 233.8);
-  doc.text(`-${item?.discount}/-`.toString(), 161, 242.2);
+  doc.text(`${item?.totals?.items}/-`.toString(), 161, 225.5);
+  doc.text(`${item?.totals?.shipping}/-`, 161, 233.8);
+  doc.text(`-${item?.totals?.discount}/-`.toString(), 161, 242.2);
 
   doc
     .setFontSize(12)
-    .text(item?.customer_details.customer_address, 36.4, 106.5, {
+    .text(`${item?.shipping_address?.street}`, 36.4, 106.5, {
       maxWidth: 165,
       align: "left",
     });
-  doc.text(item?.date, 93, 83.5);
+  doc.text(date, 93, 83.5);
   doc.setFont(undefined, "bold");
-  doc.setFontSize(15).text(item?.id, 43, 83.5);
+  doc.setFontSize(15).text(item?.orderID, 43, 83.5);
   doc
     .setFontSize(18)
-    .text(`${item?.customer_details?.salePrice.toString()}.00/-`, 161, 255.5);
+    .text(`${item?.totals?.grand.toString()}.00/-`, 161, 255.5);
 
   // doc.save(item?.id);
   doc.autoPrint();

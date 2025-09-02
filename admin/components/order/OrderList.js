@@ -39,6 +39,8 @@ const AllOrder = () => {
     opened ? setOpened(false) : setOpened(true);
   };
 
+  console.log(orders);
+
   const ref = useRef();
 
   const { inputRef } = useBarcode({
@@ -120,8 +122,8 @@ const AllOrder = () => {
   useEffect(() => {
     setLoading(true);
     const unSub = db
-      .collection("placeOrder")
-      .orderBy("timestamp", "desc")
+      .collection("orders")
+      .orderBy("created_at", "desc")
       .limit(30)
       .onSnapshot((snap) => {
         const order = [];
@@ -129,7 +131,6 @@ const AllOrder = () => {
           order.push({
             id: doc.id,
             ...doc.data(),
-            // timestamp: doc.data().timestamp?.toDate().getTime(),
           });
         });
         dispatch(updateOrder(order));

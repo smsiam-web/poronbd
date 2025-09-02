@@ -28,14 +28,24 @@ export default function App({ Component, pageProps }: AppProps) {
   };
 
     // Default if route not in map
-  const title = routeTitles[router.pathname];
+const pageTitle = `Poron || ${routeTitles[router.pathname] || "Loading"}`;
 
   return (
     <Provider store={store}>
       <Head>
-        <title>Poron || {title}</title>
+        <title>{pageTitle}</title>
         <meta name="description" content="Order your favorite products easily" />
-        <link rel="icon" href="/favicon.ico?v=2" />
+        {/* OG — স্ট্যাটিক পেজ হলে সরাসরি এখানে */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Poron" />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content="Order your favorite products easily" />
+        <meta property="og:url" content="https://poron.netlify.app//" />
+        <meta property="og:image" content="https://poron.netlify.app/login-dark.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://poron.netlify.app/login-dark.png" />
       </Head>
       <MantineProvider withNormalizeCSS withGlobalStyles>
         <Layout>

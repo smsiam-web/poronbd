@@ -85,11 +85,8 @@ const AddOrder = ({ onClick }) => {
 
   const getCustomer = useSelector(selectSingleCustomer);
 
-  console.log(user);
-
   // Submit handler
   const placeOrder = async (values) => {
-    console.log("p3", values);
     // Normalize & validate with Yup
     const normalized = normalizeOrder(values);
     await orderValidationSchemaCOD.validate(normalized, {
@@ -167,7 +164,7 @@ const AddOrder = ({ onClick }) => {
             // setOrderResponse(null);
             // dispatch(updateSingleCustomer(null));
             router.push("/place-order/id=" + orderID);
-             createCustomer(values, orderID);
+            createCustomer(values, orderID);
             // sendConfirmationMsg(values, customer_id, timestamp);
           }
 
@@ -206,28 +203,30 @@ const AddOrder = ({ onClick }) => {
         console.error("Transaction failed:", error);
       });
   };
-    // create Customer on firebase database
-    const createCustomer = async (values, orderID) => {
-      if (!values?.phone_number) {
-        console.error("Missing phone number");
-        return;
-      }
-  
-      try {
-        await db
-          .collection("customers")
-          .doc(values?.customer.phone)
-          .set({
-            customer: { ...values?.customer },
-            shipping_address: { ...values?.shipping_address },
-            items: [orderID],
-            created_at: new Date().toISOString(), // or Firestore serverTimestamp()
-          });
-        console.log("Customer created successfully");
-      } catch (error) {
-        console.error("Error creating customer:", error);
-      }
-    };
+
+  // create Customer on firebase database
+  const createCustomer = async (values, orderID) => {
+    if (!values?.customer.phone) {
+      console.error("Missing phone number");
+      return;
+    }
+
+    try {
+      await db
+        .collection("customers")
+        .doc(values?.customer.phone)
+        .set({
+          customer: { ...values?.customer },
+          shipping_address: { ...values?.shipping_address },
+          items: [orderID],
+          created_at: new Date().toISOString(), // or Firestore serverTimestamp()
+          created_user: user?.name || "admin",
+        });
+      console.log("Customer created successfully");
+    } catch (error) {
+      console.error("Error creating customer:", error);
+    }
+  };
 
   return (
     <main>

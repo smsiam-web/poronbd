@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FieldArray, useFormikContext, getIn } from "formik";
 import { AppTextArea, FormDropdown, FormInput } from "../../shared/Form";
 import ProductSearchAddWithCreate from "./ProductSearchAdd";
@@ -109,67 +109,152 @@ const SectionSkeleton = () => (
   </div>
 );
 
-function useCustomerAutofill() {
+ function useCustomerAutofill() {
   const { values, setFieldValue } = useFormikContext();
   const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
 
+  // কেবল ফোন ডিজিটস ট্র্যাক করুন
+  const phoneDigits = String(getIn(values, "customer.phone") ?? "")
+    .replace(/\D/g, "");
+
+  const timerRef = useRef(null);
+  const lastFetchedRef = useRef(null);     // শেষ যেটা ফেচ হয়েছে
+  const aliveRef = useRef(true);           // cleanup guard
+
   useEffect(() => {
-    const phoneRaw = getIn(values, "customer.phone");
-    const phone = String(phoneRaw ?? "").replace(/\D/g, "");
-    if (phone.length !== 11) return;
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
-    const timer = setTimeout(() => {
-      setIsLoadingCustomer(true);
+  useEffect(() => {
+    // বৈধ না হলে কিছুই করবেন না
+    if (phoneDigits.length !== 11 || !/^01/.test(phoneDigits)) return;
 
-      db.collection("customers")
-        .doc(phone)
-        .get()
-        .then((snap) => {
-          const setIfDiff = (path, val) => {
-            const cur = getIn(values, path);
-            if (cur !== val) setFieldValue(path, val, false);
-          };
+    // আগেরটার সাথে মিললে আবার ফেচ নয়
+    if (lastFetchedRef.current === phoneDigits) return;
 
-          if (!snap.exists) {
-            // no data → clear fields but keep typed phone
-            setIfDiff("customer.phone", phone);
-            setIfDiff("customer.name", "");
-            setIfDiff("shipping_address.city", "");
-            setIfDiff("shipping_address.state", "");
-            setIfDiff("shipping_address.country", "");
-            setIfDiff("shipping_address.street", "");
-            return;
-          }
+    // ডিবাউন্স
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      try {
+        setIsLoadingCustomer(true);
 
-          const data = snap.data();
-          setIfDiff("customer.phone", data?.customer?.phone ?? phone);
-          setIfDiff("customer.name", data?.customer?.name ?? "");
-          setIfDiff(
-            "shipping_address.city",
-            data?.shipping_address?.city ?? ""
-          );
-          setIfDiff(
-            "shipping_address.state",
-            data?.shipping_address?.state ?? ""
-          );
-          setIfDiff(
-            "shipping_address.country",
-            data?.shipping_address?.country ?? ""
-          );
-          setIfDiff(
-            "shipping_address.street",
-            data?.shipping_address?.street ?? ""
-          );
-        })
-        .catch((err) => console.error("Failed to load customer:", err))
-        .finally(() => setIsLoadingCustomer(false));
-    }, 300); // debounce
-    setIsLoadingCustomer(false);
-    return () => clearTimeout(timer);
-  }, [values, setFieldValue]);
+        const snap = await db.collection("customers").doc(phoneDigits).get();
+
+        // এই সময়ের মধ্যে ফোন পরিবর্তন হলে ইগনোর
+        if (!aliveRef.current || lastFetchedRef.current === phoneDigits) return;
+
+        lastFetchedRef.current = phoneDigits;
+
+        const setIfDiff = (path, val) => {
+          const cur = getIn(values, path);
+          if (cur !== val) setFieldValue(path, val, false);
+        };
+
+        if (!snap.exists) {
+          // ডাটা না থাকলে ফিল্ড ক্লিয়ার; টাইপ করা ফোন রেখে দিন
+          setIfDiff("customer.phone", phoneDigits);
+          setIfDiff("customer.name", "");
+          setIfDiff("shipping_address.city", "");
+          setIfDiff("shipping_address.state", "");
+          setIfDiff("shipping_address.country", "");
+          setIfDiff("shipping_address.street", "");
+          return;
+        }
+
+        const data = snap.data();
+        setIfDiff("customer.phone", data?.customer?.phone ?? phoneDigits);
+        setIfDiff("customer.name", data?.customer?.name ?? "");
+        setIfDiff("shipping_address.city", data?.shipping_address?.city ?? "");
+        setIfDiff("shipping_address.state", data?.shipping_address?.state ?? "");
+        setIfDiff(
+          "shipping_address.country",
+          data?.shipping_address?.country ?? ""
+        );
+        setIfDiff(
+          "shipping_address.street",
+          data?.shipping_address?.street ?? ""
+        );
+      } catch (err) {
+        console.error("Failed to load customer:", err);
+      } finally {
+        if (aliveRef.current) setIsLoadingCustomer(false);
+      }
+    }, 300);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+    // ✅ কেবল phoneDigits বদলালে চলবে
+  }, [phoneDigits, setFieldValue, values]);
 
   return { isLoadingCustomer };
 }
+
+// function useCustomerAutofill() {
+//   const { values, setFieldValue } = useFormikContext();
+//   const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
+
+//   useEffect(() => {
+//     const phoneRaw = getIn(values, "customer.phone");
+//     const phone = String(phoneRaw ?? "").replace(/\D/g, "");
+//     if (phone.length !== 11) return;
+
+//     const timer = setTimeout(() => {
+//       setIsLoadingCustomer(true);
+
+//       db.collection("customers")
+//         .doc(phone)
+//         .get()
+//         .then((snap) => {
+//           const setIfDiff = (path, val) => {
+//             const cur = getIn(values, path);
+//             if (cur !== val) setFieldValue(path, val, false);
+//           };
+
+//           if (!snap.exists) {
+//             // no data → clear fields but keep typed phone
+//             setIfDiff("customer.phone", phone);
+//             setIfDiff("customer.name", "");
+//             setIfDiff("shipping_address.city", "");
+//             setIfDiff("shipping_address.state", "");
+//             setIfDiff("shipping_address.country", "");
+//             setIfDiff("shipping_address.street", "");
+//             return;
+//           }
+
+//           const data = snap.data();
+//           setIfDiff("customer.phone", data?.customer?.phone ?? phone);
+//           setIfDiff("customer.name", data?.customer?.name ?? "");
+//           setIfDiff(
+//             "shipping_address.city",
+//             data?.shipping_address?.city ?? ""
+//           );
+//           setIfDiff(
+//             "shipping_address.state",
+//             data?.shipping_address?.state ?? ""
+//           );
+//           setIfDiff(
+//             "shipping_address.country",
+//             data?.shipping_address?.country ?? ""
+//           );
+//           setIfDiff(
+//             "shipping_address.street",
+//             data?.shipping_address?.street ?? ""
+//           );
+//         })
+//         .catch((err) => console.error("Failed to load customer:", err))
+//         .finally(() => setIsLoadingCustomer(false));
+//     }, 300); // debounce
+//     setIsLoadingCustomer(false);
+//     return () => clearTimeout(timer);
+//   }, [values, setFieldValue]);
+
+//   return { isLoadingCustomer };
+// }
 function useLineTotalsAutoCompute(index) {
   const { values, setFieldValue } = useFormikContext();
   const price = toNumber(getIn(values, `items[${index}].price`), 0);
