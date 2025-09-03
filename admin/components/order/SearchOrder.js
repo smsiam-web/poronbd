@@ -545,27 +545,6 @@ const SearchOrder = ({ onClick }) => {
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
-            {/* <div className="flex-grow-0 md:flex-grow lg:flex-grow xl:flex-grow">
-              <select
-                className="block w-full px-2 py-1 text-sm  focus:outline-none rounded-md form-select focus:border-gray-200 border-gray-200  focus:shadow-none leading-5 border h-14 bg-gray-100 border-transparent focus:bg-white"
-                onChange={(e) => onLimitChanged(e)}
-              >
-                <option value="All">Order limits</option>
-                <option value="1">Today's orders</option>
-                <option value="7">Last 7 days orders</option>
-                <option value="10">Last 10 days orders</option>
-                <option value="15">Last 15 days orders</option>
-                <option value="30">Last 30 days orders</option>
-              </select>
-            </div> */}
-            {/* <div className="w-full md:w-56 lg:w-56 xl:w-56">
-              <Button
-                onClick={() => BulkAction()}
-                title="Bulk Print"
-                className="bg-blue-400 hover:bg-blue-500 hover:shadow-lg transition-all duration-300 text-white w-full h-14"
-                icon=<IoPrintOutline size={24} />
-              />
-            </div> */}
             <div className="w-full md:w-56 lg:w-56 xl:w-56">
               <Button
                 onClick={onClick}

@@ -22,7 +22,6 @@ import {
 } from "@/admin/utils/helpers";
 import { FaPrint } from "react-icons/fa";
 import { updateConfig } from "@/app/redux/slices/configSlice";
-import { useBarcode } from "next-barcode";
 import { RiDeleteBinLine } from "react-icons/ri";
 
 const AllOrder = () => {
@@ -34,25 +33,10 @@ const AllOrder = () => {
   const [opened, setOpened] = useState(false);
   const order = useSelector(selectOrder);
   const user = useSelector(selectUser);
-  const [ID, setID] = useState(null);
 
   const toggleOpen = () => {
     opened ? setOpened(false) : setOpened(true);
   };
-
-  console.log(orders);
-
-  const ref = useRef();
-
-  const { inputRef } = useBarcode({
-    value: ID,
-    options: {
-      background: "#FFFFFF",
-      displayValue: false,
-      width: 3,
-      height: 80,
-    },
-  });
 
   useEffect(() => {
     setOrders(order);
@@ -80,15 +64,7 @@ const AllOrder = () => {
     setFilterOrder(item);
     //   console.log(item);
   };
-  // Change Status from print Action and check print Status
-  const stickerStatus = async (item) => {
-    setID(item?.sfc?.consignment_id);
-    item.status === "processing"
-      ? updateStatus(item, "shipped", item?.id)
-      : toggleOpen;
-    setFilterOrder(item);
-    item.status === "processing" && generateStick(item, inputRef?.current.src);
-  };
+
   const deleteItem = async (item) => {
     setFilterOrder(item);
     toggleOpen();
@@ -232,11 +208,7 @@ const AllOrder = () => {
         </div>
       </Modal>
       <div className="grid gap-4 w-full overflow-hidden ">
-        <div className="hidden">
-          <img ref={inputRef} alt="ok" />
-        </div>
         <div className="w-full overflow-x-scroll rounded-md relative">
-          {/* order table  */}
           {!orders.length ? (
             <NotFound text={"order"} />
           ) : (
@@ -340,7 +312,7 @@ const AllOrder = () => {
                             </td>
                             <td className="px-4 py-3">
                               <span className="text-sm font-bold">
-                                -{item?.totals?.dicount}tk
+                                -{item?.totals?.discount}tk
                               </span>
                             </td>
 

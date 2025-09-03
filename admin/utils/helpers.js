@@ -332,7 +332,6 @@ export const invoiceGenerate = (item) => {
   const blob = doc.output("blob");
   const url = URL.createObjectURL(blob);
 
-  // ✅ Preview in a new tab + try to auto-print as soon as it loads
   const w = window.open("", "_blank");
   if (w) {
     w.document.write(`
@@ -358,19 +357,15 @@ export const invoiceGenerate = (item) => {
   `);
     w.document.close();
   } else {
-    // popup blocked হলে fallback: শুধু ওপেন করুন
     window.open(url, "_blank");
   }
 
-  // 🟦 (Optional) আলাদা বাটনে/অ্যাকশনে কাস্টম ফাইলনেম ডাউনলোড
-  // একই blob URL ইউজ করলে খুব তাড়াতাড়ি revoke করবেন না
   const a = document.createElement("a");
   a.href = url;
   a.download = fileName;
   a.click();
 
-  // ⚠️ খুব তাড়াতাড়ি revoke করলে নতুন ট্যাব লোড হতে নাও পারে। একটু দেরিতে revoke করুন:
-  setTimeout(() => URL.revokeObjectURL(url), 60000); // 60s পরে নিরাপদে রিভোক
+  setTimeout(() => URL.revokeObjectURL(url), 60000); 
 
 };
 function barcodeDataURL(value, options = {}) {

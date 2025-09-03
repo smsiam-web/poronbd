@@ -1,13 +1,13 @@
 import jsPDF from "jspdf";
 import "../../utils/fonts/SolaimanLipi-normal";
-import { TodayDate } from "@/admin/utils/helpers";
+import { formatDates, TodayDate } from "@/admin/utils/helpers";
 
 function generateBulkPrintInvoice(invoiceArray) {
   console.log(invoiceArray);
   const doc = new jsPDF();
   const DEFAULT_FILENAME = TodayDate();
 
-  invoiceArray.forEach((data, index) => {
+  invoiceArray.forEach((item, index) => {
     let item_01 = "",
       item_01_quantity = "",
       item_01_price = "",
@@ -33,47 +33,50 @@ function generateBulkPrintInvoice(invoiceArray) {
       item_06_price = "",
       item_06_total_price = "";
 
-    data.order.map((e, i) => {
+    item.items.map((e, i) => {
       i++;
       if (i === 1) {
         item_01 = e.title || "";
         item_01_quantity = `${e.quantity}`;
-        item_01_price = [e.price];
-        item_01_total_price = `${e.total_price}/-`;
+        item_01_price = `${e.price}`;
+        item_01_total_price = `${e.line_total}/-`;
       } else if (i === 2) {
         item_02 = e.title || "";
         item_02_quantity = `${e.quantity}`;
-        item_02_price = [e.price];
-        item_02_total_price = `${e.total_price}/-`;
+        item_02_price = `${e.price}`;
+        item_02_total_price = `${e.line_total}/-`;
       } else if (i === 3) {
         item_03 = e.title || "";
         item_03_quantity = `${e.quantity}`;
-        item_03_price = [e.price];
-        item_03_total_price = `${e.total_price}/-`;
+        item_03_price = `${e.price}`;
+        item_03_total_price = `${e.line_total}/-`;
       } else if (i === 4) {
         item_04 = e.title || "";
         item_04_quantity = `${e.quantity}`;
-        item_04_price = [e.price];
-        item_04_total_price = `${e.total_price}/-`;
+        item_04_price = `${e.price}`;
+        item_04_total_price = `${e.line_total}/-`;
       } else if (i === 5) {
         item_05 = e.title || "";
         item_05_quantity = `${e.quantity}`;
-        item_05_price = [e.price];
-        item_05_total_price = `${e.total_price}/-`;
+        item_05_price = `${e.price}`;
+        item_05_total_price = `${e.line_total}/-`;
       } else if (i === 6) {
         item_06 = e.title || "";
         item_06_quantity = `${e.quantity}`;
-        item_06_price = [e.price];
-        item_06_total_price = `${e.total_price}/-`;
+        item_06_price = `${e.price}`;
+        item_06_total_price = `${e.line_total}/-`;
       }
     });
 
+    // doc.text(document.querySelector(".content > h2").innerHTML, 5, 75);
+    // doc.setFont("LiAbuUnicode");
+    // doc.setFont("LiAnis");
     doc.setFont("SolaimanLipi");
     doc.addImage("/invoice/invoice.jpg", 0, 0, 210, 297);
-    doc.text(`${index + 1}`, 3, 294); // Title
-    doc.text(data?.status, 91, 77);
-    doc.text(data?.customer_details.customer_name, 33, 91.4);
-    doc.text(data?.customer_details.phone_number, 33.3, 99);
+    doc.text(item?.fulfillment?.order_status, 91, 77);
+    doc.text(item?.customer?.name, 33, 91.4);
+    doc.text(item?.customer?.phone, 33.3, 99);
+    doc.text(`${index < 10 && 0}${index + 1}`, 6, 290); // Title
 
     doc.text(item_01, 30, 139.6);
     doc.text(item_01_quantity, 116, 139.6);
@@ -105,29 +108,24 @@ function generateBulkPrintInvoice(invoiceArray) {
     doc.text(item_06_price, 137, 208.2);
     doc.text(item_06_total_price, 168, 208.2);
 
-    doc
-      .setFontSize(12)
-      .text(`[Note: ${data?.customer_details?.invoice_Note || ""}]`, 8, 218.2, {
-        maxWidth: 120,
-        align: "left",
-      });
-    doc.text(`${data?.totalPrice}/-`.toString(), 161, 225.5);
-    doc.text("Home", 182, 233.8);
-    doc.text(`${data?.deliveryCrg}/-`, 161, 233.8);
-    doc.text(`-${data?.discount}/-`.toString(), 161, 242.2);
-
-    doc
-      .setFontSize(12)
-      .text(data?.customer_details.customer_address, 36.4, 106.5, {
-        maxWidth: 165,
-        align: "left",
-      });
-    doc.text(data?.date, 93, 83.5);
-    doc.setFont("SolaimanLipi", "bold");
-    doc.setFontSize(16).text(data?.id, 43, 83.5);
+    doc.setFontSize(12).text(`[Note: ${item?.meta?.notes || ""}]`, 8, 218.2, {
+      maxWidth: 120,
+      align: "left",
+    });
+    doc.text(`${item?.totals?.items}/-`.toString(), 161, 225.5);
+    doc.text(`${item?.totals?.shipping}/-`, 161, 233.8);
+    doc.text(`-${item?.totals?.discount}/-`.toString(), 161, 242.2);
+    doc.setFontSize(12).text(`${item?.shipping_address?.street}`, 36.4, 106.5, {
+      maxWidth: 165,
+      align: "left",
+    });
+    const date = formatDates(item?.created_at);
+    doc.text(date, 93, 83.5);
+    doc.setFont(undefined, "bold");
+    doc.setFontSize(15).text(item?.orderID, 43, 83.5);
     doc
       .setFontSize(18)
-      .text(`${data?.customer_details?.salePrice.toString()}.00/-`, 161, 255.5);
+      .text(`${item?.totals?.grand.toString()}.00/-`, 161, 255.5);
 
     // Add a new page unless it's the last data
     if (index < invoiceArray.length - 1) {
@@ -136,15 +134,48 @@ function generateBulkPrintInvoice(invoiceArray) {
     }
   });
 
-  // Save the PDF
-  doc.save(`Bulk-Order(${invoiceArray.length})_${DEFAULT_FILENAME}.pdf`);
-  // doc.save(data?.id);
   doc.autoPrint();
-  //This is a key for printing
-  doc.output("dataurlnewwindow");
 
-  // OR open it in a new tab for direct printing
-  // doc.output('dataurlnewwindow');
+  const fileName = `bulk_inv(${invoiceArray.length})_${DEFAULT_FILENAME}.pdf`;
+
+  // Make a Blob + URL
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+
+  const w = window.open("", "_blank");
+  if (w) {
+    w.document.write(`
+    <html>
+      <head><title>${fileName}</title></head>
+      <body style="margin:0">
+        <iframe id="pdf" src="${url}" style="border:0;width:100%;height:100vh;"></iframe>
+        <script>
+          const frame = document.getElementById('pdf');
+          frame.addEventListener('load', () => {
+            try {
+              // Chrome সাধারণত OpenAction (autoPrint) রেস্পেক্ট করে।
+              // তবু সেফটির জন্য প্রোগ্রাম্যাটিক প্রিন্টও ট্রাই করি:
+              frame.contentWindow && frame.contentWindow.focus();
+              frame.contentWindow && frame.contentWindow.print();
+            } catch (e) {}
+          });
+          // ট্যাব বন্ধ হলে URL revoke
+          window.addEventListener('beforeunload', () => URL.revokeObjectURL('${url}'));
+        <\/script>
+      </body>
+    </html>
+  `);
+    w.document.close();
+  } else {
+    window.open(url, "_blank");
+  }
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName;
+  a.click();
+
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 export default generateBulkPrintInvoice;

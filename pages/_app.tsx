@@ -1,3 +1,83 @@
+// import "../styles/globals.css";
+// import type { AppProps } from "next/app";
+// import Layout from "../app/layout";
+// import { Provider } from "react-redux";
+// import { store } from "@/app/redux/store";
+// import { MantineProvider } from "@mantine/core";
+// import { Notifications } from "@mantine/notifications";
+// import Head from "next/head";
+// import { useRouter } from "next/router";
+// import { useEffect } from "react";
+
+// export default function App({ Component, pageProps }: AppProps) {
+//   const router = useRouter();
+
+//   // Map routes to titles
+//   const routeTitles: Record<string, string> = {
+//     "/": "E-commerce",
+//     "/place-order": "Orders",
+//     "/products": "Products",
+//     "/place-order/add-new": "Create Order",
+//     "/delivery-report": "Delivery Report",
+//     "/support-tickets": "Tickets",
+//     "/category": "Categorys",
+//     "/customers": "Customers",
+//     "/orders": "Orders",
+//     "/coupons": "Coupons",
+//     "/our-staff": "Our Staff",
+//     "/setting": "Setting",
+//   };
+
+//   // Default if route not in map
+//   const pageTitle = `Poron || ${routeTitles[router.pathname] || "E-commerce"}`;
+//   useEffect(() => {
+//     if ("serviceWorker" in navigator) {
+//       navigator.serviceWorker.register("/sw.js").catch(console.error);
+//     }
+//   }, []);
+
+//   return (
+//     <Provider store={store}>
+//       <Head>
+//         <title>{pageTitle}</title>
+//         <link rel="manifest" href="/manifest.webmanifest"></link>
+//         <meta
+//           name="description"
+//           content="Order your favorite products easily"
+//         />
+//         {/* OG — স্ট্যাটিক পেজ হলে সরাসরি এখানে */}
+//         <meta property="og:type" content="website" />
+//         <meta property="og:site_name" content="Poron" />
+//         <meta property="og:title" content={pageTitle} />
+//         <meta
+//           property="og:description"
+//           content="Order your favorite products easily"
+//         />
+//         <meta property="og:url" content="https://poron.netlify.app//" />
+//         <meta
+//           property="og:image"
+//           content="https://poron.netlify.app/login-dark.png"
+//         />
+//         <meta property="og:image:width" content="1200" />
+//         <meta property="og:image:height" content="630" />
+//         <meta name="twitter:card" content="summary_large_image" />
+//         <meta
+//           name="twitter:image"
+//           content="https://poron.netlify.app/login-dark.png"
+//         />
+//       </Head>
+//       <MantineProvider withNormalizeCSS withGlobalStyles>
+//         <Layout>
+//           <Notifications position="top-right" autoClose={2000} />
+//           <Component {...pageProps} />
+//         </Layout>
+//       </MantineProvider>
+//     </Provider>
+//   );
+// }
+
+
+// pages/_app.tsx
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import Layout from "../app/layout";
@@ -7,9 +87,10 @@ import { MantineProvider } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { useEffect } from "react";
 
 export default function App({ Component, pageProps }: AppProps) {
-   const router = useRouter();
+  const router = useRouter();
 
   // Map routes to titles
   const routeTitles: Record<string, string> = {
@@ -27,26 +108,80 @@ export default function App({ Component, pageProps }: AppProps) {
     "/setting": "Setting",
   };
 
-    // Default if route not in map
-const pageTitle = `Poron || ${routeTitles[router.pathname] || "E-commerce"}`;
+  // Single text node for <title>
+  const pageTitle = `Poron || ${routeTitles[router.pathname] ?? "E-commerce"}`;
+
+  // Register service worker only in production, after window load
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production") return;
+    if (!("serviceWorker" in navigator)) return;
+
+    const onLoad = () => {
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/" })
+        .then((reg) => {
+          // Optional: basic update flow
+          reg.onupdatefound = () => {
+            const sw = reg.installing;
+            if (!sw) return;
+            sw.onstatechange = () => {
+              if (sw.state === "installed" && navigator.serviceWorker.controller) {
+                console.info("A new version is available. Reload to update.");
+              }
+            };
+          };
+        })
+        .catch(console.error);
+    };
+
+    window.addEventListener("load", onLoad);
+    return () => window.removeEventListener("load", onLoad);
+  }, []);
+
+  // Absolute canonical for OG
+  const CANONICAL = `https://poron.netlify.app${router.asPath.split("?")[0]}`;
 
   return (
     <Provider store={store}>
       <Head>
+        {/* PWA */}
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0ea5e9" />
+        <link rel="icon" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+        {/* Title/Description */}
         <title>{pageTitle}</title>
         <meta name="description" content="Order your favorite products easily" />
-        {/* OG — স্ট্যাটিক পেজ হলে সরাসরি এখানে */}
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Poron" />
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content="Order your favorite products easily" />
-        <meta property="og:url" content="https://poron.netlify.app//" />
-        <meta property="og:image" content="https://poron.netlify.app/login-dark.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://poron.netlify.app/login-dark.png" />
+
+        {/* Canonical (helps FB/Twitter pick a stable URL) */}
+        <link rel="canonical" href={CANONICAL} />
+
+        {/* Open Graph (static fallback; per-page OG হলে প্রতিটি পেজে Head ব্যবহার করুন) */}
+        <meta property="og:type" content="website" key="og:type" />
+        <meta property="og:site_name" content="Poron" key="og:site_name" />
+        <meta property="og:title" content={pageTitle} key="og:title" />
+        <meta property="og:description" content="Order your favorite products easily" key="og:description" />
+        <meta property="og:url" content={CANONICAL} key="og:url" />
+        <meta
+          property="og:image"
+          content="https://poron.netlify.app/login-dark.png"
+          key="og:image"
+        />
+        <meta property="og:image:width" content="1200" key="og:image:width" />
+        <meta property="og:image:height" content="630" key="og:image:height" />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" key="twitter:card" />
+        <meta
+          name="twitter:image"
+          content="https://poron.netlify.app/login-dark.png"
+          key="twitter:image"
+        />
       </Head>
+
       <MantineProvider withNormalizeCSS withGlobalStyles>
         <Layout>
           <Notifications position="top-right" autoClose={2000} />
