@@ -102,7 +102,7 @@ const ProductTable = ({ onClick }) => {
     setLoading(true);
     const unSub = db
       .collection("products")
-      .orderBy("timestamp", "desc")
+      .orderBy("created_at", "desc")
       .onSnapshot((snap) => {
         const product = [];
         snap.docs.map((doc) => {

@@ -28,9 +28,9 @@ const placeProductHandler = async (values) => {
       // create a new doc id if none provided
       const ref = col.doc();
       docId = ref.id;
-      await ref.set({ ...values, id: docId, timestamp,  title_lower: values?.title.toLowerCase(), }, { merge: true });
+      await ref.set({ ...values, id: docId, created_at: new Date().toISOString(),  title_lower: values?.title.toLowerCase(), }, { merge: true });
     } else {
-      await col.doc(docId).set({ ...values, timestamp, title_lower: values?.title.toLowerCase(), }, { merge: true });
+      await col.doc(docId).set({ ...values, created_at: new Date().toISOString(), title_lower: values?.title.toLowerCase(), }, { merge: true });
     }
 
     notifications.show({

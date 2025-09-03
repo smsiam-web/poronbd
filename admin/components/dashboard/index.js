@@ -33,13 +33,13 @@ const DashBoard = () => {
       .onSnapshot((snap) => {
         const data = (snap.data());
         const dataArr = [
-          data.sevenAmount,
-          data.sixAmount,
-          data.fiveAmount,
-          data.fourAmount,
-          data.threeAmount,
-          data.twoAmount,
-          data.oneAmount,
+          data?.sevenAmount || 0,
+          data?.sixAmount || 0,
+          data?.fiveAmount || 0,
+          data?.fourAmount || 0,
+          data?.threeAmount || 0,
+          data?.twoAmount || 0,
+          data?.oneAmount || 0,
         ];
         setLast7DaysAmountReport(dataArr)
       });
@@ -56,13 +56,13 @@ const DashBoard = () => {
       .onSnapshot((snap) => {
         const data = (snap.data());
         const dataArr = [
-          data.sevenOrder,
-          data.sixOrder,
-          data.fiveOrder,
-          data.fourOrder,
-          data.threeOrder,
-          data.twoOrder,
-          data.oneOrder,
+          data?.sevenOrder || 0,
+          data?.sixOrder || 0,
+          data?.fiveOrder || 0,
+          data?.fourOrder || 0,
+          data?.threeOrder || 0,
+          data?.twoOrder || 0,
+          data?.oneOrder || 0,
         ];
         setLast7DaysOrderReport(dataArr)
       });

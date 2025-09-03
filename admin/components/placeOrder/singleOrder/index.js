@@ -28,21 +28,10 @@ const OrderDetails = ({ onClick, item }) => {
       });
   }, [id]);
 
-  const { inputRef } = useBarcode({
-    value: id,
-    options: {
-      background: "#FFFFFF",
-      displayValue: false,
-      width: 3,
-      height: 80,
-    },
-  });
-  console.log(singleOrder);
 
   return (
     <div className="">
       <div className={`bg-white max-w-5xl relative`} ref={ref}>
-        <img id="bar_code" ref={inputRef} className="hidden" />
         <img
           id="image"
           src="/invoice/invoice.png"
@@ -54,19 +43,31 @@ const OrderDetails = ({ onClick, item }) => {
         <div className="flex flex-col justify-between px-5 sm:px-10 h-auto font-mono">
           <div>
             <div className="flex justify-between items-start sm:py-2 sm:mb-2">
-              <div className=" sm:pt-1 flex justify-center items-center">
-                <span className="text-sm sm:text-xl md:text-2xl  text-title">
-                  Invoice ID:{" "}
-                </span>
-                <span className="text-primary text-lg sm:text-lg  md:text-2xl  font-bold">
-                  #
-                </span>
-                <span
-                  id="invoiceNo"
-                  className="text-primary font-bold text-sm sm:text-lg md:text-2xl  font-mono"
-                >
-                  {id}
-                </span>
+              <div className=" ">
+                <div className="flex gap-1">
+                  <span className="text-sm sm:text-lg md:text-xl  text-title">
+                    Invoice ID:{" "}
+                  </span>
+                
+                  <span
+                    id="invoiceNo"
+                    className="text-primary font-bold text-sm sm:text-lg md:text-xl  font-mono"
+                  >
+                    #{id}
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  <span className="text-sm sm:text-lg md:text-xl  text-title">
+                    Courier:{" "}
+                  </span>
+                  
+                  <span
+                    id="invoiceNo"
+                    className={`${singleOrder?.fulfillment?.courier === "Pathao" ? "text-[#E83330]" : "text-[#34A487]"}  font-bold text-sm sm:text-lg md:text-xl  font-mono`}
+                  >
+                    #{singleOrder?.fulfillment?.courier}
+                  </span>
+                </div>
               </div>
               <div className="flex flex-col justify-center items-start">
                 <div className="-pb-3]">
@@ -230,7 +231,7 @@ const OrderDetails = ({ onClick, item }) => {
                 <h1 className="text-sm sm:text-xl md:text-2xl font-mono font-medium">
                   Delivery:{" "}
                 </h1>
-                
+
                 <h1
                   id="shipping_cost"
                   className="text-sm sm:text-xl md:text-2xl text-title font-mono"

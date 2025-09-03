@@ -24,7 +24,6 @@ import { FaPrint } from "react-icons/fa";
 import { updateConfig } from "@/app/redux/slices/configSlice";
 import { useBarcode } from "next-barcode";
 import { RiDeleteBinLine } from "react-icons/ri";
-import firebase from "firebase/app";
 import "firebase/database";
 
 const OrderTable = () => {
@@ -156,7 +155,7 @@ const OrderTable = () => {
   const DeleteOrder = async (item) => {
     toggleOpen();
     await db
-      .collection("placeOrder")
+      .collection("orders")
       .doc(item.id)
       .delete()
       .then(() => {
@@ -295,7 +294,11 @@ const OrderTable = () => {
                               {/* </Link> */}
                             </td>
                             <td className="px-4 py-3 font-bold">
-                              <Link href={`https://merchant.pathao.com/courier/orders/${item?.fulfillment?.consignment_id}`} target="_blank" rel="noopener noreferrer">
+                              <Link
+                                href={`${item?.fulfillment?.courier === "Pathao" ? `https://merchant.pathao.com/courier/orders/${item?.fulfillment?.consignment_id}` : `https://steadfast.com.bd/user/consignment/${item?.fulfillment?.consignment_id}`}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
                               <span className="text-sm">
                                 {item?.fulfillment?.consignment_id || "null"}
                               </span>

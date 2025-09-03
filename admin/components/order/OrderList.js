@@ -220,7 +220,6 @@ const AllOrder = () => {
                   <th className="px-4 py-3 ">Consignment</th>
                   <th className="px-4 py-3 ">NAME</th>
                   <th className="px-4 py-3 ">Phone no.</th>
-                  <th className="px-4 py-3 ">Delivery Type</th>
                   <th className="px-4 py-3 ">DISCOUNT</th>
                   <th className="px-4 py-3 ">Amount</th>
                   <th className="px-4 py-3 text-center ">status</th>
@@ -274,7 +273,7 @@ const AllOrder = () => {
                             </td>
                             <td className="px-4 py-3 font-bold">
                               <Link
-                                href={`https://merchant.pathao.com/courier/orders/${item?.fulfillment?.consignment_id}`}
+                                href={`${item?.fulfillment?.courier === "Pathao" ? `https://merchant.pathao.com/courier/orders/${item?.fulfillment?.consignment_id}` : `https://steadfast.com.bd/user/consignment/${item?.fulfillment?.consignment_id}`}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
@@ -296,20 +295,7 @@ const AllOrder = () => {
                                   {item.customer?.phone}
                                 </a>
                               </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span
-                                className={`${
-                                  item?.customer_details?.delivery_type
-                                    ? "bg-green-100 text-green-400"
-                                    : "bg-slate-200 text-slate-500"
-                                } text-xs uppercase font-serif font-medium px-2 py-1 rounded-full`}
-                              >
-                                {item?.customer_details?.delivery_type
-                                  ? "HOME"
-                                  : "POINT"}
-                              </span>
-                            </td>
+                            </td>            
                             <td className="px-4 py-3">
                               <span className="text-sm font-bold">
                                 -{item?.totals?.discount}tk

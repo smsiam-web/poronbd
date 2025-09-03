@@ -40,6 +40,51 @@ const SearchOrder = ({ onClick }) => {
   const [limits, setLimits] = useState(false);
   const [limit, setLimit] = useState(30);
 
+  const [statusFilter, setStatusFilter] = useState("all"); // 'all' | 'pending' | ...
+  const [courierFilter, setCourierFilter] = useState("all");
+
+  const canFilter = ["Admin", "HR", "Sales Manager"].includes(
+    useSelector(selectUser)?.staff_role
+  );
+  const norm = (s) =>
+    String(s ?? "")
+      .trim()
+      .toLowerCase();
+
+  const applyFilters = () => {
+    let list = orders || [];
+
+    if (statusFilter !== "all") {
+      list = list.filter((o) => norm(o?.status) === statusFilter);
+    }
+    if (courierFilter !== "all") {
+      list = list.filter(
+        (o) => norm(o?.fulfillment?.courier) === courierFilter
+      );
+    }
+
+    // ফলাফল স্টোরে দিন
+    dispatch(updateOrder(list));
+    dispatch(updateBulkOrder(list));
+  };
+
+  const statusChange = (e) => {
+    if (!canFilter) return;
+    const v = norm(e.target.value);
+    setStatusFilter(v === "status" ? "all" : v);
+  };
+
+  const courierChange = (e) => {
+    if (!canFilter) return;
+    const v = norm(e.target.value);
+    setCourierFilter(v === "courier" ? "all" : v);
+  };
+
+  // orders/status/courier বদলালেই রি-ফিল্টার
+  useEffect(() => {
+    applyFilters();
+  }, [orders, statusFilter, courierFilter]);
+
   useEffect(() => {
     const fetchOrders = async () => {
       setOrders(allOrders); // Directly set the orders
@@ -58,41 +103,36 @@ const SearchOrder = ({ onClick }) => {
   const handleChange = (e) => {
     setCurrentValue(e.currentTarget.value);
   };
-  const toggleOpen = () => {
-    opened ? setOpened(false) : setOpened(true);
-  };
+  // const buttonRef = useRef(null);        // ✅ JS
+  const toggleOpen = () => (opened ? close() : open());
 
-  const { inputRef } = useBarcode({
-    value: `${filterOrder?.sfc?.consignment_id}`,
-    options: {
-      background: "#FFFFFF",
-      displayValue: false,
-      width: 3,
-      height: 80,
-    },
-  });
   useEffect(() => {
     if (buttonRef.current) {
       buttonRef.current.focus(); // Auto-focus the button when the component mounts
     }
   }, [filterOrder]);
 
-  // Change Status from print Action and check print Status
+  // Sticker
   const stickerStatus = async (item) => {
-    item.status === "processing" ? updateStatus(item, "shipped") : toggleOpen;
-    item.status === "processing" && generateStick(item, inputRef?.current.src);
+    if (item.status === "processing") {
+      await updateStatus(item, "shipped");
+      generateStick(item, inputRef?.current?.src);
+    } else {
+      toggleOpen(); // ✅ call
+    }
   };
 
-  // Change Status from print Action and check print Status
+  // Invoice
   const getInvoice = async (item) => {
-    item.status === "pending" && invoiceGenerate(item);
-
-    item.status === "pending"
-      ? updateStatus(item, "processing", item?.id)
-      : toggleOpen;
+    if (item.status === "pending") {
+      invoiceGenerate(item);
+      await updateStatus(item, "processing", item?.id);
+    } else {
+      toggleOpen(); // ✅ call
+    }
     close();
-    //   console.log(item);
   };
+
   // Change Status from status Action
   const onStatusChanged = async (e, id) => {
     e.preventDefault();
@@ -100,28 +140,6 @@ const SearchOrder = ({ onClick }) => {
     await updateStatus(filterOrder, newStatus);
     setFilterOrder(null);
   };
-
-  // // update status on firebase
-  // const updateStatuss = async (i, status, id) => {
-  //   await db
-  //     .collection("placeOrder")
-  //     .doc(id)
-  //     .set(
-  //       {
-  //         ...i,
-  //         timestamp: i.timestamp,
-  //         status: status,
-  //       },
-  //       { merge: true }
-  //     );
-
-  //   notifications.show({
-  //     title: "Status Updated Successfully",
-  //     message: `Customer Name ${filterOrder?.customer_details.customer_name}, Order ID: #${filterOrder?.id}`,
-  //     color: "blue",
-  //   });
-  //   close();
-  // };
 
   const updateStatus = async (order, newStatus) => {
     const success = await updateOrderStatus(db, order.id, order, newStatus);
@@ -141,118 +159,12 @@ const SearchOrder = ({ onClick }) => {
     }
   };
 
-  // // search config
-  // useEffect(() => {
-  //   let ss = [];
-  //   if (!currentValue) {
-  //     dispatch(updateOrder(orders));
-  //     ss = [];
-  //     return;
-  //   }
-
-  //   const res = orders.map((i) => {
-  //     if (
-  //       i.customer_details.customer_name
-  //         .toLowerCase()
-  //         .split(" ")
-  //         .includes(currentValue?.toLowerCase())
-  //     ) {
-  //       ss.push({ ...i });
-  //     } else if (i.customer_details.phone_number === currentValue) {
-  //       ss.push({ ...i });
-  //     } else if (i.id.toLowerCase() === currentValue.toLowerCase()) {
-  //       ss.push({ ...i });
-  //     } else if (
-  //       i.customer_details.customer_name.toLowerCase() ===
-  //       currentValue.toLowerCase()
-  //     ) {
-  //       ss.push({ ...i });
-  //     } else if (
-  //       i.customer_details.customer_address
-  //         .toLowerCase()
-  //         .split(" ")
-  //         .includes(currentValue?.toLowerCase())
-  //     ) {
-  //       ss.push({ ...i });
-  //     } else if (i.date === currentValue) {
-  //       ss.push({ ...i });
-  //     }
-  //   });
-
-  //   ss.length ? dispatch(updateOrder(ss)) : dispatch(updateOrder(orders));
-  // }, [currentValue]);
-
   useEffect(() => {
     const value = currentValue?.toUpperCase();
-    if (value?.split("0")[0] === "PR" && value.length === 9) {
+    if (value?.split("0")[0] === "PR" && value.length === 10) {
       filter(value);
     }
   }, [currentValue]);
-
-  // Function to handle status change
-  const statusChange = async (e) => {
-    if (user.staff_role !== "HR") return;
-    e.preventDefault(); // Prevent default form submission behavior
-
-    const statusFilter = e.target.value.toLowerCase(); // Get the selected status
-    console.log(statusFilter, orders, order);
-    let filteredOrders = [];
-
-    if (statusFilter === "status") {
-      dispatch(updateOrder(orders)); // Update orders in the Redux store
-      dispatch(updateBulkOrder([])); // Reset bulk orders
-      setStatus("Status");
-      setBulkOrder([]);
-      return;
-    }
-
-    // Filter orders based on the selected status
-    orders.map((item) => {
-      item?.status.toLowerCase() === statusFilter && filteredOrders.push(item);
-    });
-    // Update Redux state with the filtered or empty results
-    dispatch(updateOrder(filteredOrders));
-
-    dispatch(updateBulkOrder(filteredOrders)); // Update bulk orders in the Redux store
-
-    // Reset bulk orders if not "Pending"
-  };
-
-  // // onLimits Config
-  // const onLimitChanged = (e) => {
-  //   e.preventDefault();
-  //   // if(e.target.value === "All"){
-  //   //   return;
-  //   // }
-  //   let limits = [];
-  //   const date = new Date();
-  //   const dateAgo = parseInt(e.target.value) - 1;
-
-  //   const res = orders.map((item) => {
-  //     if (item.timestamp.toDate().getMonth() === date.getMonth()) {
-  //       if (item.timestamp.toDate().getDate() >= date.getDate() - dateAgo) {
-  //         limits.push(item);
-  //       }
-  //     }
-
-  //     if (
-  //       date.getDate() - dateAgo < 1 &&
-  //       date.getMonth() - 1 === item.timestamp.toDate().getMonth()
-  //     ) {
-  //       if (
-  //         item.timestamp.toDate().getDate() >=
-  //         daysInMonth(date.getMonth() - 1, date.getFullYear()) +
-  //           date.getDate() -
-  //           dateAgo
-  //       ) {
-  //         limits.push(item);
-  //       }
-  //     }
-  //   });
-  //   limits.length
-  //     ? dispatch(updateOrder(limits))
-  //     : dispatch(updateOrder(orders));
-  // };
 
   const filter = async (id) => {
     await db
@@ -357,9 +269,7 @@ const SearchOrder = ({ onClick }) => {
                 user.staff_role === "HR" ||
                 user?.staff_role === "Sales Manager" ||
                 user?.staff_role === "Admin") && (
-                <Link
-                  href={`/place-order/edit-order/id=${filterOrder.id}`}
-                >
+                <Link href={`/place-order/edit-order/id=${filterOrder.id}`}>
                   <span className="bg-black flex items-center gap-1 px-3 py-2 rounded-md cursor-pointer  text-xs text-white font-medium hover:shadow-lg transition-all duration-300">
                     <FiEdit size={14} /> Edit
                   </span>
@@ -385,28 +295,19 @@ const SearchOrder = ({ onClick }) => {
                 <h2 className="text-lg font-semibold">
                   {filterOrder?.customer.name}
                 </h2>
-                <h2>
-                  Address: {filterOrder?.shipping_address.street}
-                </h2>
-                <h2>
-                  Phone Numbaer: {filterOrder?.customer.phone}
-                </h2>
+                <h2>Address: {filterOrder?.shipping_address.street}</h2>
+                <h2>Phone Numbaer: {filterOrder?.customer.phone}</h2>
                 <h2 className="text-slate-600">
                   Note: {filterOrder?.notes || "N/A"}
                 </h2>
               </div>
               <div className="w-4/12 text-end">
                 <h3>{formatDates(filterOrder?.created_at)}</h3>
+                <h3>Order type: {filterOrder?.meta?.source || "N/A"}</h3>
+                <h3>Received by: {filterOrder?.received_user || "N/A"}</h3>
                 <h3>
-                  Order type:{" "}
-                  {filterOrder?.meta?.source || "N/A"}
-                </h3>
-                <h3>
-                  Received by:{" "}
-                  {filterOrder?.received_user || "N/A"}
-                </h3>
-                <h3>
-                  Entry by: {filterOrder?.created_user || filterOrder.created_user}
+                  Entry by:{" "}
+                  {filterOrder?.created_user || filterOrder.created_user}
                 </h3>
                 {filterOrder?.updated_user && (
                   <h3>Updated by: {filterOrder?.updated_user || "N/A"}</h3>
@@ -434,7 +335,8 @@ const SearchOrder = ({ onClick }) => {
                           className="text-sm sm:text-xl text-title font-mono"
                           id={`item_0${i}_quantity`}
                         >
-                          {item?.quantity}{item?.unit}
+                          {item?.quantity}
+                          {item?.unit}
                         </span>
                         <span
                           className="text-sm sm:text-xl text-title font-mono"
@@ -511,9 +413,6 @@ const SearchOrder = ({ onClick }) => {
           </div>
         )}
       </Modal>
-      <div className="hidden">
-        <img ref={inputRef} alt="ok" />
-      </div>
       <div className="min-w-0 rounded-lg overflow-hidden bg-gray-50  shadow-xs  mb-5">
         <div className="p-4">
           <div className="py-3 grid gap-4 lg:gap-6 xl:gap-6 md:flex xl:flex">
@@ -530,19 +429,30 @@ const SearchOrder = ({ onClick }) => {
             </div>
             <div className="flex-grow-0 md:flex-grow lg:flex-grow xl:flex-grow">
               <select
-                className="block w-full px-2 py-1 text-sm  focus:outline-none rounded-md form-select focus:border-gray-200 border-gray-200  focus:shadow-none leading-5 border h-14 bg-gray-100 border-transparent focus:bg-gray-50"
-                id="roleItem"
-                name="roleItem"
-                // defaultValue={selectedSubNav}
-                onChange={(e) => statusChange(e)}
+                className="block w-full px-2 py-1 text-sm focus:outline-none rounded-md form-select focus:border-gray-200 border-gray-200 focus:shadow-none leading-5 border h-14 bg-gray-100 border-transparent focus:bg-gray-50"
+                onChange={statusChange}
+                value={statusFilter === "all" ? "status" : statusFilter}
+                disabled={!canFilter}
               >
-                <option>Status</option>
+                <option value="status">Status</option>
                 <option value="pending">Pending</option>
                 <option value="processing">Processing</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
                 <option value="hold">Hold</option>
                 <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div className="flex-grow-0 md:flex-grow lg:flex-grow xl:flex-grow">
+              <select
+                className="block w-full px-2 py-1 text-sm focus:outline-none rounded-md form-select focus:border-gray-200 border-gray-200 focus:shadow-none leading-5 border h-14 bg-gray-100 border-transparent focus:bg-gray-50"
+                onChange={courierChange}
+                value={courierFilter === "all" ? "courier" : courierFilter}
+                disabled={!canFilter}
+              >
+                <option value="courier">Courier</option>
+                <option value="pathao">Pathao</option>
+                <option value="steadfast">Steadfast</option>
               </select>
             </div>
             <div className="w-full md:w-56 lg:w-56 xl:w-56">

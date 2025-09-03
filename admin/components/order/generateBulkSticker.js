@@ -153,6 +153,7 @@ function generateBulkPrintStickers(invoiceArray) {
       const x = (pageWidth - textWidth) / 2;
       doc.text(text, x, y);
     };
+    centerText(`${item?.fulfillment?.courier}(#${item?.fulfillment?.consignment_id})`, 74, 30)
     centerText(`Address: Savar, Dhaka-1216`, 259, 28);
     centerText(`Hotline: +88 01773-043533`, 247, 28);
     doc.setFont(undefined, "bold");

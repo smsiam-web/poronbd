@@ -33,35 +33,41 @@ function generateBulkPrintInvoice(invoiceArray) {
       item_06_price = "",
       item_06_total_price = "";
 
+           
+
     item.items.map((e, i) => {
+       const opt = Array.isArray(e?.option)
+        ? e.option.map((o) => `${o.value || o.value}`).join(", ")
+        : "";
+      const title = opt ? `${e.title} (${opt})` : e.title;
       i++;
       if (i === 1) {
-        item_01 = e.title || "";
+        item_01 = title || "";
         item_01_quantity = `${e.quantity}`;
         item_01_price = `${e.price}`;
         item_01_total_price = `${e.line_total}/-`;
       } else if (i === 2) {
-        item_02 = e.title || "";
+        item_02 = title || "";
         item_02_quantity = `${e.quantity}`;
         item_02_price = `${e.price}`;
         item_02_total_price = `${e.line_total}/-`;
       } else if (i === 3) {
-        item_03 = e.title || "";
+        item_03 = title || "";
         item_03_quantity = `${e.quantity}`;
         item_03_price = `${e.price}`;
         item_03_total_price = `${e.line_total}/-`;
       } else if (i === 4) {
-        item_04 = e.title || "";
+        item_04 = title || "";
         item_04_quantity = `${e.quantity}`;
         item_04_price = `${e.price}`;
         item_04_total_price = `${e.line_total}/-`;
       } else if (i === 5) {
-        item_05 = e.title || "";
+        item_05 = title || "";
         item_05_quantity = `${e.quantity}`;
         item_05_price = `${e.price}`;
         item_05_total_price = `${e.line_total}/-`;
       } else if (i === 6) {
-        item_06 = e.title || "";
+        item_06 = title || "";
         item_06_quantity = `${e.quantity}`;
         item_06_price = `${e.price}`;
         item_06_total_price = `${e.line_total}/-`;
@@ -73,7 +79,8 @@ function generateBulkPrintInvoice(invoiceArray) {
     // doc.setFont("LiAnis");
     doc.setFont("SolaimanLipi");
     doc.addImage("/invoice/invoice.jpg", 0, 0, 210, 297);
-    doc.text(item?.fulfillment?.order_status, 91, 77);
+    doc.text(item?.fulfillment?.order_status || "Pending", 91, 77);
+    doc.text(item?.fulfillment?.courier || "N/A", 153.5, 77);
     doc.text(item?.customer?.name, 33, 91.4);
     doc.text(item?.customer?.phone, 33.3, 99);
     doc.text(`${index < 10 && 0}${index + 1}`, 6, 290); // Title

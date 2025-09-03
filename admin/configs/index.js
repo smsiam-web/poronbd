@@ -295,3 +295,22 @@ export const STATUS = [
   { id: "Delivered", name: "Delivered" },
   { id: "Cancelled", name: "Cancelled" },
 ];
+
+export const ERROR_MEANINGS = {
+  0: "Success. Everything worked as expected.",
+  400: "Missing or invalid parameter.",
+  403: "Permission denied.",
+  404: "Resource not found.",
+  405: "Authorization required.",
+  409: "Unknown server error.",
+  410: "Account expired.",
+  411: "Reseller account expired or suspended.",
+  412: "Invalid schedule.",
+  413: "Invalid Sender ID.",
+  414: "Message is empty.",
+  415: "Message is too long.",
+  416: "No valid number found.",
+  417: "Insufficient balance.",
+  420: "Content blocked.",
+  421: "Only registered phone number allowed until first recharge.",
+};

@@ -217,14 +217,15 @@ const EditProduts = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (!docId) return;
+    // if (!docId) return;
     db.collection("products")
       .doc(docId)
       .get()
-      .then((snap) => {
-        const data = snap.data() || {};
-        // keep firestore doc id as field too (useful)
-        setProduct({ id: snap.id, ...data });
+      .then((doc) => {
+        if (!!doc.data()) {
+            const product = { id: doc.id, ...doc.data() };
+            setProduct(product);
+          }
       });
   }, [docId]);
 
@@ -320,8 +321,6 @@ const EditProduts = () => {
 
   /* --------------------------- submit handler --------------------------- */
   const editProductHandler = async (values, formikHelpers) => {
-
-    console.log(values);
     try {
       setLoading(true);
       const payload = buildProductPayload(values);
@@ -340,7 +339,7 @@ const EditProduts = () => {
         await db
           .collection("products")
           .doc(writeId)
-          .set({ createdAt: timestamp, isPublished: false, }, { merge: true });
+          .set({ updated_at: new Date().toISOString(), isPublished: false, }, { merge: true });
       }
 
       setLoading(false);
@@ -433,7 +432,7 @@ const EditProduts = () => {
     },
 
     // SEO
-    seo: product?.seo ,
+    seo: product?.seo,
 
     // Extra
     available_from: product?.available_from || "",

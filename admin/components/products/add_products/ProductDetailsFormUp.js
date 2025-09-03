@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FieldArray, useFormikContext, getIn } from "formik";
 import { AppTextArea, FormDropdown, FormInput } from "../../shared/Form";
-import { PCATEGORY, CCATEGORY, TCATEGORY, CATEGORY } from "@/admin/configs";
+import { CATEGORY } from "@/admin/configs";
 
 const STATUS_ITEMS = [
   { name: "Draft", id: "draft" },
@@ -89,7 +89,7 @@ const ProductDetailsFormUp = (edit) => {
   return (
     <div className="max-h-full space-y-4">
       {/* BASICS */}
-          <div>
+      <div>
         <span>Product ID (Unique)</span>
         <FormInput name="id" placeholder="ID must be unique" />
       </div>
@@ -102,7 +102,6 @@ const ProductDetailsFormUp = (edit) => {
         />
       </div>
 
-  
       <div>
         <span>Product SKU (single-SKU only)</span>
         <FormInput name="single_sku" placeholder="Product SKU" />
@@ -142,24 +141,6 @@ const ProductDetailsFormUp = (edit) => {
           items={CATEGORY}
         />
       </div>
-      <div>
-        <span>Child Category</span>
-        <FormDropdown
-          name="categories[1].id"
-          placeholder="Select child category"
-          items={CCATEGORY}
-        />
-      </div>
-
-      {/* TYPE */}
-      <div>
-        <span>Product Type</span>
-        <FormDropdown
-          name="attributes.ProductType"
-          placeholder="Select type"
-          items={TCATEGORY}
-        />
-      </div>
 
       <div>
         <span>Available From</span>
@@ -185,7 +166,9 @@ const ProductDetailsFormUp = (edit) => {
       {/* SINGLE SKU PRICE/STOCK */}
       {!hasVariants && (
         <div className="grid grid-cols-2 gap-3 p-3 border rounded">
-          <div className="col-span-2 font-medium">Single SKU Pricing & Stock</div>
+          <div className="col-span-2 font-medium">
+            Single SKU Pricing & Stock
+          </div>
           <div>
             <span>Product Price</span>
             <FormInput
@@ -204,7 +187,11 @@ const ProductDetailsFormUp = (edit) => {
           </div>
           <div>
             <span>Currency</span>
-            <FormDropdown name="currency" placeholder="Currency" items={CURRENCY} />
+            <FormDropdown
+              name="currency"
+              placeholder="Currency"
+              items={CURRENCY}
+            />
           </div>
           <div>
             <span>Stock (MAIN)</span>
@@ -297,14 +284,19 @@ const ProductDetailsFormUp = (edit) => {
       {/* VARIANTS LIST */}
       {hasVariants && (
         <div className="space-y-3 p-3 border rounded">
-          <div className="font-medium">Variants (writes to product.variants[])</div>
+          <div className="font-medium">
+            Variants (writes to product.variants[])
+          </div>
 
           <FieldArray
             name="variants"
             render={({ push, remove }) => (
               <>
                 {(getIn(values, "variants") || []).map((_, i) => (
-                  <div key={i} className="grid grid-cols-6 gap-3 p-3 border rounded">
+                  <div
+                    key={i}
+                    className="grid grid-cols-6 gap-3 p-3 border rounded"
+                  >
                     <div className="col-span-6 flex items-center justify-between">
                       <div className="font-medium">Variant {i + 1}</div>
                       <button
@@ -315,46 +307,50 @@ const ProductDetailsFormUp = (edit) => {
                         Remove
                       </button>
                     </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 col-span-6 gap-2">
+                      <div className="col-span-1">
+                        <span>SKU</span>
+                        <FormInput
+                          name={`variants[${i}].sku`}
+                          placeholder="SKU"
+                        />
+                      </div>
 
-                    <div className="col-span-2">
-                      <span>SKU</span>
-                      <FormInput name={`variants[${i}].sku`} placeholder="SKU" />
-                    </div>
+                      <div className="col-span-1">
+                        <span>Currency</span>
+                        <FormDropdown
+                          name={`variants[${i}].currency`}
+                          placeholder="Currency"
+                          items={CURRENCY}
+                        />
+                      </div>
 
-                    <div>
-                      <span>Currency</span>
-                      <FormDropdown
-                        name={`variants[${i}].currency`}
-                        placeholder="Currency"
-                        items={CURRENCY}
-                      />
-                    </div>
+                      <div className="col-span-1">
+                        <span>Price (current)</span>
+                        <FormInput
+                          name={`variants[${i}].price`}
+                          placeholder="0.00"
+                          type="number"
+                        />
+                      </div>
 
-                    <div>
-                      <span>Price (current)</span>
-                      <FormInput
-                        name={`variants[${i}].price`}
-                        placeholder="0.00"
-                        type="number"
-                      />
-                    </div>
+                      <div className="col-span-1">
+                        <span>Compare at (original)</span>
+                        <FormInput
+                          name={`variants[${i}].compare_at_price`}
+                          placeholder="0.00"
+                          type="number"
+                        />
+                      </div>
 
-                    <div>
-                      <span>Compare at (original)</span>
-                      <FormInput
-                        name={`variants[${i}].compare_at_price`}
-                        placeholder="0.00"
-                        type="number"
-                      />
-                    </div>
-
-                    <div>
-                      <span>Active?</span>
-                      <FormDropdown
-                        name={`variants[${i}].is_active`}
-                        placeholder="Active"
-                        items={YES_NO}
-                      />
+                      <div className="col-span-1">
+                        <span>Active?</span>
+                        <FormDropdown
+                          name={`variants[${i}].is_active`}
+                          placeholder="Active"
+                          items={YES_NO}
+                        />
+                      </div>
                     </div>
 
                     {/* Option Values */}
@@ -390,42 +386,44 @@ const ProductDetailsFormUp = (edit) => {
                     </div>
 
                     {/* Inventory (single MAIN location) */}
-                    <div>
-                      <span>Stock on hand</span>
-                      <FormInput
-                        name={`variants[${i}].inventory[0].stock_on_hand`}
-                        placeholder="0"
-                        type="number"
-                      />
-                    </div>
-                    <div>
-                      <span>Reserved</span>
-                      <FormInput
-                        name={`variants[${i}].inventory[0].stock_reserved`}
-                        placeholder="0"
-                        type="number"
-                      />
-                    </div>
-                    <div>
-                      <span>Reorder point</span>
-                      <FormInput
-                        name={`variants[${i}].inventory[0].reorder_point`}
-                        placeholder="0"
-                        type="number"
-                      />
-                    </div>
-                    <div>
-                      <span>Allow backorder?</span>
-                      <FormDropdown
-                        name={`variants[${i}].inventory[0].allow_backorder`}
-                        placeholder="No"
-                        items={YES_NO}
-                      />
-                      <FormInput
-                        name={`variants[${i}].inventory[0].location_code`}
-                        defaultValue="MAIN"
-                        hidden
-                      />
+                    <div className="grid grid-cols-2 md:grid-cols-3 col-span-6 gap-2">
+                      <div className="col-span-1">
+                        <span>Stock on hand</span>
+                        <FormInput
+                          name={`variants[${i}].inventory[0].stock_on_hand`}
+                          placeholder="0"
+                          type="number"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <span>Reserved</span>
+                        <FormInput
+                          name={`variants[${i}].inventory[0].stock_reserved`}
+                          placeholder="0"
+                          type="number"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <span>Reorder point</span>
+                        <FormInput
+                          name={`variants[${i}].inventory[0].reorder_point`}
+                          placeholder="0"
+                          type="number"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <span>Allow backorder?</span>
+                        <FormDropdown
+                          name={`variants[${i}].inventory[0].allow_backorder`}
+                          placeholder="No"
+                          items={YES_NO}
+                        />
+                        <FormInput
+                          name={`variants[${i}].inventory[0].location_code`}
+                          defaultValue="MAIN"
+                          hidden
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}

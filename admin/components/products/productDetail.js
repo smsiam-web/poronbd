@@ -68,11 +68,8 @@ const EditProduts = () => {
         setProduct({ id: snap.id, ...data });
       });
   }, [docId]);
+  
 
-  const images = useMemo(() => {
-    const list = Array.isArray(product?.images) ? [...product.images] : [];
-    return list.sort((a, b) => toNum(a.position, 0) - toNum(b.position, 0));
-  }, [product]);
 
   const currency = product?.variants?.[0]?.currency || "USD";
 
@@ -321,38 +318,6 @@ const EditProduts = () => {
               </table>
             </div>
           </div>
-
-          {/* Variant images (optional)
-          {product.variants.some(
-            (v) => Array.isArray(v.images) && v.images.length > 0
-          ) && (
-            <div className="mt-4">
-              <h3 className="text-sm font-medium text-gray-900 mb-2">
-                Variant Images
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {product.variants.flatMap((v) =>
-                  (v.images || []).map((img) => (
-                    <div
-                      key={(v.id || v.sku) + "-" + (img.id || img.url)}
-                      className="relative w-full aspect-[4/3] rounded overflow-hidden border"
-                    >
-                      <Image
-                        src={img.url}
-                        alt={img.alt_text || `${v.sku} image`}
-                        fill
-                        sizes="(max-width: 768px) 50vw, 25vw"
-                        className="object-cover"
-                      />
-                      <div className="absolute bottom-0 left-0 right-0 bg-black/40 text-white text-xs px-2 py-1">
-                        {v.sku} • #{toNum(img.position, 0)}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )} */}
         </section>
       )}
 

@@ -10,6 +10,9 @@ const nextConfig = {
   // },
 
   env: {
+    STEADFAST_API_KEY: "jlrucxcrscnbuk3cnp9hm1uq4lhwuoyz ",
+    STEADFAST_BASE_URL: "https://portal.packzy.com/api/v1",
+    STEADFAST_SECRET_KEY: "sgorfaoc9gcx8cshnn337qfa ",
     FIREBASE_API_KEY: "AIzaSyCoUqj3PS5WS15C-bxiCjUi2mNwLjeHdjk",
     FIREBASE_AUTH_DOMAIN: "poron-5e3f7.firebaseapp.com",
     FIREBASE_PROJECT_ID: "poron-5e3f7",
