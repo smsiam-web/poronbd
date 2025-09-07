@@ -137,11 +137,11 @@ function generateBulkPrintStickers(invoiceArray) {
     });
 
     // ✅ Center the consignment ID text
-    const consignmentId = `${item?.fulfillment?.consignment_id}`;
-    doc.setFontSize(34);
-    const textWidth = doc.getTextWidth(consignmentId);
-    const textX = (pageWidth - textWidth) / 2;
-    doc.text(consignmentId, textX, 74);
+    // const consignmentId = `${item?.fulfillment?.consignment_id}`;
+    // doc.setFontSize(34);
+    // const textWidth = doc.getTextWidth(consignmentId);
+    // const textX = (pageWidth - textWidth) / 2;
+    // doc.text(consignmentId, textX, 74);
 
     // doc.setFontSize(26).text(`(WGT: ${item?.weight}kg)`, 6, 74);
 

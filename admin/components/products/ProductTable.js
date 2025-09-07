@@ -198,13 +198,13 @@ const ProductTable = ({ onClick }) => {
                   {!!products &&
                     products?.map((item) => (
                       <tr className="" key={item.id}>
-                        <Link href={`/products/id=${item?.id}`}>
                           <td className="px-4 py-3">
+                        <Link href={`/products/id=${item?.id}`}>
                             <span className="text-sm font-bold">
                               #{item?.id || "null"}
                             </span>
-                          </td>
                         </Link>
+                          </td>
                         <td className="px-4 py-3">
                           <span className="text-sm">
                             {item?.single_sku ||

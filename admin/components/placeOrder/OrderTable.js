@@ -300,7 +300,7 @@ const OrderTable = () => {
                                 rel="noopener noreferrer"
                               >
                               <span className="text-sm">
-                                {item?.fulfillment?.consignment_id || "null"}
+                                #{item?.fulfillment?.consignment_id || "null"}
                               </span>
                               </Link>
                             </td>

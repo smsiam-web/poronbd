@@ -64,6 +64,15 @@ const AllOrder = () => {
     setFilterOrder(item);
     //   console.log(item);
   };
+  const stickerStatus = async (item) => {
+    item.status === "processing" && generateStick(item);
+
+    item.status === "processing"
+      ? updateStatus(item, "shipped", item?.id)
+      : toggleOpen;
+    setFilterOrder(item);
+    //   console.log(item);
+  };
 
   const deleteItem = async (item) => {
     setFilterOrder(item);
@@ -278,7 +287,7 @@ const AllOrder = () => {
                                 rel="noopener noreferrer"
                               >
                                 <span className="text-sm">
-                                  {item?.fulfillment?.consignment_id || "null"}
+                                  #{item?.fulfillment?.consignment_id || "null"}
                                 </span>
                               </Link>
                             </td>
