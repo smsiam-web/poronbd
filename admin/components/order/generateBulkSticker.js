@@ -29,7 +29,7 @@ function generateBulkPrintStickers(invoiceArray) {
 
     // ✅ Center the barcode
     // let image = `${barCodeImageLink}`;
-    const img = barcodeDataURL(item?.courier?.consignment_id);
+    const img = barcodeDataURL(item?.fulfillment?.consignment_id);
     const barcodeWidth = 150;
     const barcodeHeight = 30;
     const barcodeX = (pageWidth - barcodeWidth) / 2; // center horizontally
@@ -74,49 +74,56 @@ function generateBulkPrintStickers(invoiceArray) {
     }
 
     if (renderedBody.length > 0) {
-      autoTable(doc, {
-        startY,
-        margin: { left: 15, right: 15 },
-        body: renderedBody, // 5-কলামের রো: [#, Item, Qty, Price, Total]
-        theme: "grid",
+    autoTable(doc, {
+      startY,
+      margin: { left: 15, right: 15 },
+      body: renderedBody, // 5-কলামের রো: [#, Item, Qty, Price, Total]
+      theme: "grid",
 
-        // 🔥 গ্লোবাল সেল স্টাইল
-        styles: {
-          fontSize: 14,
-          cellPadding: 2,
-          textColor: [0, 0, 0], // টেক্সট কালো
-          lineColor: [0, 0, 0], // সেলের বর্ডার কালো
-          lineWidth: 0.2,
-          fillColor: null, // কোন ব্যাকগ্রাউন্ড না
-        },
-        bodyStyles: {
-          textColor: [0, 0, 0], // বডি টেক্সট কালো
-        },
+      // 🔥 গ্লোবাল সেল স্টাইল
+      styles: {
+        fontSize: 22,
+        fontStyle: "bold",
+        cellPadding: 2,
+        textColor: [0, 0, 0], // টেক্সট কালো
+        lineColor: [0, 0, 0], // সেলের বর্ডার কালো
+        lineWidth: 0.2,
+        fillColor: null, // কোন ব্যাকগ্রাউন্ড না
+        fontStyle: "bold",
+      },
+      bodyStyles: {
+        textColor: [0, 0, 0], // বডি টেক্সট কালো
+      },
 
-        // 🔥 টেবিলের আউটার বর্ডারও কালো/পুরু
-        tableLineColor: [0, 0, 0],
-        tableLineWidth: 0.2,
+      // 🔥 টেবিলের আউটার বর্ডারও কালো/পুরু
+      tableLineColor: [0, 0, 0],
+      tableLineWidth: 0.2,
 
-        columnStyles: {
-          0: { cellWidth: 10, halign: "center" }, // #
-          1: { cellWidth: "auto" }, // Item
-          2: { cellWidth: 16, halign: "center" }, // Qty
-          3: { cellWidth: 26, halign: "right" }, // Price
-          4: { cellWidth: 30, halign: "right" }, // Total
-        },
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" }, // #
+        1: { cellWidth: "auto" }, // Item
+        2: { cellWidth: 16, halign: "right" }, // Qty
+        2: { cellWidth: 26, halign: "center" }, // Qty
+        // 3: { cellWidth: 26, halign: "right" }, // Price
+        // 4: { cellWidth: 30, halign: "right" }, // Total
 
-        // (ঐচ্ছিক) একদম নিশ্চিত করতে:
-        didDrawCell: (data) => {
-          const d = data.doc;
-          d.setTextColor(0, 0, 0);
-          d.setDrawColor(0, 0, 0);
-        },
-      });
-    } else {
-      // কোন আইটেম না থাকলে ছোটো একটা নোট
-      doc.setFontSize(14);
-      doc.text("No items", 16, startY + 6);
-    }
+      },
+
+      // (ঐচ্ছিক) একদম নিশ্চিত করতে:
+      didDrawCell: (data) => {
+        const d = data.doc;
+        d.setTextColor(0, 0, 0);
+        d.setDrawColor(0, 0, 0);
+      },
+    });
+  } else {
+    // কোন আইটেম না থাকলে ছোটো একটা নোট
+    doc.setFontSize(22);
+
+    doc.setFont(undefined, "bold");
+
+    doc.text("No items", 16, startY + 6);
+  }
 
     doc.setFontSize(22).text(`Created by SM.Devware.`, 105, 285);
     doc.setFontSize(28);
@@ -131,21 +138,13 @@ function generateBulkPrintStickers(invoiceArray) {
 
     doc.text(`Address`, 22, 124);
 
-    doc.setFontSize(26).text(item?.shipping_address?.street, 65, 124, {
+    doc.setFontSize(16).text(item?.shipping_address?.street, 65, 124, {
       maxWidth: 140,
       align: "left",
     });
 
-    // ✅ Center the consignment ID text
-    // const consignmentId = `${item?.fulfillment?.consignment_id}`;
-    // doc.setFontSize(34);
-    // const textWidth = doc.getTextWidth(consignmentId);
-    // const textX = (pageWidth - textWidth) / 2;
-    // doc.text(consignmentId, textX, 74);
 
-    // doc.setFontSize(26).text(`(WGT: ${item?.weight}kg)`, 6, 74);
-
-    // ✅ Center "Jannat Fashion"
+    // ✅ Center "Poron"
     // const pageWidth = doc.internal.pageSize.getWidth();
     const centerText = (text, y, fontSize = 36) => {
       doc.setFontSize(fontSize);

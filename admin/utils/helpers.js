@@ -371,7 +371,6 @@ export const invoiceGenerate = (item) => {
   a.click();
 
   setTimeout(() => URL.revokeObjectURL(url), 60000);
-
 };
 function barcodeDataURL(value, options = {}) {
   const canvas = document.createElement("canvas");
@@ -402,7 +401,7 @@ export const generateStick = (item) => {
 
   // ✅ Center the barcode
   // let image = `${barCodeImageLink}`;
-  const img = barcodeDataURL(item?.courier?.consignment_id);
+  const img = barcodeDataURL(item?.fulfillment?.consignment_id);
   const barcodeWidth = 150;
   const barcodeHeight = 30;
   const barcodeX = (pageWidth - barcodeWidth) / 2; // center horizontally
@@ -423,15 +422,15 @@ export const generateStick = (item) => {
       : "";
     const title = opt ? `${it.title} (${opt})` : it.title;
     const qty = Number(it?.quantity || 0);
-    const price = Number(it?.price || 0);
-    const total = Number(it?.line_total ?? qty * price);
+    // const price = Number(it?.price || 0);
+    // const total = Number(it?.line_total ?? qty * price);
     // const title = String(it?.title || "");
     return [
       i + 1,
       title,
       qty > 0 ? `${qty} ${it?.unit || ""}`.trim() : "",
-      formatMoney(price),
-      formatMoney(total),
+      // formatMoney(price),
+      // formatMoney(total),
     ];
   });
 
@@ -440,6 +439,9 @@ export const generateStick = (item) => {
   const maxRows = Math.max(0, Math.floor(availableHeight / rowHeight));
   let renderedBody = bodyRows.slice(0, maxRows);
   const hiddenCount = bodyRows.length - renderedBody.length;
+  const title = process.env.APP_TITLE || "";
+  const address = process.env.SENDER_ADDRESS || "";
+  const hotline = process.env.SENDER_HOTLINE || "";
 
   if (hiddenCount > 0) {
     // শেষ লাইনে “+N more” দেখান
@@ -455,12 +457,14 @@ export const generateStick = (item) => {
 
       // 🔥 গ্লোবাল সেল স্টাইল
       styles: {
-        fontSize: 14,
+        fontSize: 22,
+        fontStyle: "bold",
         cellPadding: 2,
         textColor: [0, 0, 0], // টেক্সট কালো
         lineColor: [0, 0, 0], // সেলের বর্ডার কালো
         lineWidth: 0.2,
         fillColor: null, // কোন ব্যাকগ্রাউন্ড না
+        fontStyle: "bold",
       },
       bodyStyles: {
         textColor: [0, 0, 0], // বডি টেক্সট কালো
@@ -473,9 +477,11 @@ export const generateStick = (item) => {
       columnStyles: {
         0: { cellWidth: 10, halign: "center" }, // #
         1: { cellWidth: "auto" }, // Item
-        2: { cellWidth: 16, halign: "center" }, // Qty
-        3: { cellWidth: 26, halign: "right" }, // Price
-        4: { cellWidth: 30, halign: "right" }, // Total
+        2: { cellWidth: 16, halign: "right" }, // Qty
+        2: { cellWidth: 26, halign: "center" }, // Qty
+        // 3: { cellWidth: 26, halign: "right" }, // Price
+        // 4: { cellWidth: 30, halign: "right" }, // Total
+
       },
 
       // (ঐচ্ছিক) একদম নিশ্চিত করতে:
@@ -487,7 +493,10 @@ export const generateStick = (item) => {
     });
   } else {
     // কোন আইটেম না থাকলে ছোটো একটা নোট
-    doc.setFontSize(14);
+    doc.setFontSize(22);
+
+    doc.setFont(undefined, "bold");
+
     doc.text("No items", 16, startY + 6);
   }
 
@@ -515,11 +524,15 @@ export const generateStick = (item) => {
     const x = (pageWidth - textWidth) / 2;
     doc.text(text, x, y);
   };
-  centerText(`${item?.fulfillment?.courier}(#${item?.fulfillment?.consignment_id})`, 74, 30)
-  centerText(`Address: Savar, Dhaka-1216`, 259, 28);
-  centerText(`Hotline: +88 01773-043533`, 247, 28);
+  centerText(
+    `${item?.fulfillment?.courier}(#${item?.fulfillment?.consignment_id})`,
+    74,
+    30
+  );
+  centerText(`Address: ${address}`, 259, 28);
+  centerText(`Hotline: +88 ${hotline}`, 247, 28);
   doc.setFont(undefined, "bold");
-  centerText("PORON", 235, 36); // centered version
+  centerText(`${title}`, 235, 36); // centered version
   centerText(`HOME DELIVERY`, 205, 40);
   centerText(`COD: ${item?.totals?.grand}/-`, 218, 40);
 
@@ -528,7 +541,7 @@ export const generateStick = (item) => {
   doc.setFontSize(34).text("Sender:", 15, 226);
 
   // Top brand title (can also be centered if you prefer)
-  centerText("PORON", 25, 55);
+  centerText(`${title}`, 25, 55);
 
   centerText("Thanks for being with us.", 273, 34);
 

@@ -198,67 +198,7 @@ function useCustomerAutofill() {
   return { isLoadingCustomer };
 }
 
-// function useCustomerAutofill() {
-//   const { values, setFieldValue } = useFormikContext();
-//   const [isLoadingCustomer, setIsLoadingCustomer] = useState(false);
 
-//   useEffect(() => {
-//     const phoneRaw = getIn(values, "customer.phone");
-//     const phone = String(phoneRaw ?? "").replace(/\D/g, "");
-//     if (phone.length !== 11) return;
-
-//     const timer = setTimeout(() => {
-//       setIsLoadingCustomer(true);
-
-//       db.collection("customers")
-//         .doc(phone)
-//         .get()
-//         .then((snap) => {
-//           const setIfDiff = (path, val) => {
-//             const cur = getIn(values, path);
-//             if (cur !== val) setFieldValue(path, val, false);
-//           };
-
-//           if (!snap.exists) {
-//             // no data → clear fields but keep typed phone
-//             setIfDiff("customer.phone", phone);
-//             setIfDiff("customer.name", "");
-//             setIfDiff("shipping_address.city", "");
-//             setIfDiff("shipping_address.state", "");
-//             setIfDiff("shipping_address.country", "");
-//             setIfDiff("shipping_address.street", "");
-//             return;
-//           }
-
-//           const data = snap.data();
-//           setIfDiff("customer.phone", data?.customer?.phone ?? phone);
-//           setIfDiff("customer.name", data?.customer?.name ?? "");
-//           setIfDiff(
-//             "shipping_address.city",
-//             data?.shipping_address?.city ?? ""
-//           );
-//           setIfDiff(
-//             "shipping_address.state",
-//             data?.shipping_address?.state ?? ""
-//           );
-//           setIfDiff(
-//             "shipping_address.country",
-//             data?.shipping_address?.country ?? ""
-//           );
-//           setIfDiff(
-//             "shipping_address.street",
-//             data?.shipping_address?.street ?? ""
-//           );
-//         })
-//         .catch((err) => console.error("Failed to load customer:", err))
-//         .finally(() => setIsLoadingCustomer(false));
-//     }, 300); // debounce
-//     setIsLoadingCustomer(false);
-//     return () => clearTimeout(timer);
-//   }, [values, setFieldValue]);
-
-//   return { isLoadingCustomer };
-// }
 function useLineTotalsAutoCompute(index) {
   const { values, setFieldValue } = useFormikContext();
   const price = toNumber(getIn(values, `items[${index}].price`), 0);
@@ -588,7 +528,7 @@ const OrderDetailsFormUp = () => {
 const AddressFields = ({ prefix }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <div className="col-span-1">
+      <div className="col-span-2">
         <span>Street</span>
         <FormInput name={`${prefix}.street`} placeholder="Street, house" />
       </div>
@@ -600,7 +540,7 @@ const AddressFields = ({ prefix }) => {
         <span>State / District</span>
         <FormInput name={`${prefix}.state`} placeholder="Dhaka" />
       </div>
-      <div className="col-span-1">
+      {/* <div className="col-span-1">
         <span>Country</span>
         <FormInput
           name={`${prefix}.country`}
@@ -608,7 +548,7 @@ const AddressFields = ({ prefix }) => {
           disabled
           placeholder=""
         />
-      </div>
+      </div> */}
     </div>
   );
 };
